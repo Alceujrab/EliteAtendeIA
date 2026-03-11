@@ -1,0 +1,192 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Represents an application user (agent, manager, or admin).",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "User's full name" },
+        "email": { "type": "string", "format": "email", "description": "User's email address" },
+        "role": { "type": "string", "enum": ["admin", "manager", "agent"], "description": "User's role for RBAC" },
+        "avatar": { "type": "string", "description": "URL to user's avatar image" },
+        "inboxes": { "type": "array", "items": { "type": "string" }, "description": "List of inbox names the user has access to" }
+      },
+      "required": ["name", "email", "role"]
+    },
+    "Vehicle": {
+      "title": "Vehicle",
+      "description": "Represents a vehicle in the catalog.",
+      "type": "object",
+      "properties": {
+        "brand": { "type": "string" },
+        "model": { "type": "string" },
+        "year": { "type": "number" },
+        "price": { "type": "number" },
+        "mileage": { "type": "number" },
+        "image": { "type": "string" },
+        "features": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["brand", "model", "year", "price"]
+    },
+    "Ticket": {
+      "title": "Ticket",
+      "description": "Represents a customer conversation/ticket.",
+      "type": "object",
+      "properties": {
+        "customerName": { "type": "string" },
+        "customerEmail": { "type": "string" },
+        "customerPhone": { "type": "string" },
+        "customerAvatar": { "type": "string" },
+        "channel": { "type": "string", "enum": ["whatsapp", "email", "instagram", "phone", "facebook"] },
+        "status": { "type": "string", "enum": ["open", "pending", "closed"] },
+        "subject": { "type": "string" },
+        "lastMessage": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "inbox": { "type": "string" },
+        "assignedTo": { "type": "string" },
+        "fromWebhook": { "type": "boolean" }
+      },
+      "required": ["customerName", "channel", "status", "updatedAt"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "Represents a message within a ticket.",
+      "type": "object",
+      "properties": {
+        "sender": { "type": "string", "enum": ["agent", "customer", "bot"] },
+        "text": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "isVehicle": { "type": "boolean" },
+        "vehicleData": { "$ref": "#/entities/Vehicle" },
+        "fromWebhook": { "type": "boolean" },
+        "mediaUrl": { "type": "string" },
+        "mediaType": { "type": "string", "enum": ["image", "video", "audio", "document"] },
+        "agentName": { "type": "string" }
+      },
+      "required": ["sender", "text", "timestamp"]
+    },
+    "Customer": {
+      "title": "Customer",
+      "description": "Represents a customer profile.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "cpf": { "type": "string" },
+        "address": { "type": "string" },
+        "notes": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "inactive", "lead"] },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "avatar": { "type": "string" },
+        "tags": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["name", "status", "createdAt", "updatedAt"]
+    },
+    "Lead": {
+      "title": "Lead",
+      "description": "Represents a lead in the Kanban board.",
+      "type": "object",
+      "properties": {
+        "customerName": { "type": "string" },
+        "customerPhone": { "type": "string" },
+        "vehicleName": { "type": "string" },
+        "value": { "type": "number" },
+        "status": { "type": "string" },
+        "type": { "type": "string", "enum": ["sales", "sourcing"] },
+        "avatar": { "type": "string" }
+      },
+      "required": ["customerName", "customerPhone", "vehicleName", "value", "status", "type"]
+    },
+    "Settings": {
+      "title": "Settings",
+      "description": "Represents global application settings, like integrations.",
+      "type": "object",
+      "properties": {
+        "evolutionApiUrl": { "type": "string" },
+        "evolutionApiKey": { "type": "string" },
+        "instagramPageAccessToken": { "type": "string" },
+        "instagramPageId": { "type": "string" },
+        "instagramVerifyToken": { "type": "string" }
+      }
+    },
+    "Inbox": {
+      "title": "Inbox",
+      "description": "Represents a communication channel instance (e.g., a WhatsApp number or Instagram page).",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "channel": { "type": "string", "enum": ["whatsapp", "instagram"] },
+        "settings": {
+          "type": "object",
+          "properties": {
+            "evolutionApiUrl": { "type": "string" },
+            "evolutionApiKey": { "type": "string" },
+            "evolutionInstance": { "type": "string" },
+            "instagramPageAccessToken": { "type": "string" },
+            "instagramPageId": { "type": "string" },
+            "instagramVerifyToken": { "type": "string" }
+          }
+        },
+        "accessType": { "type": "string", "enum": ["all", "specific"] },
+        "allowedUsers": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["name", "channel", "settings", "accessType", "createdAt"]
+    },
+    "WebhookEvent": {
+      "title": "WebhookEvent",
+      "description": "Raw webhook events to be processed by the client.",
+      "type": "object",
+      "properties": {
+        "source": { "type": "string", "enum": ["instagram", "evolution"] },
+        "payload": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["source", "payload", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/webhook_events/{eventId}": {
+      "schema": { "$ref": "#/entities/WebhookEvent" },
+      "description": "Stores raw webhook events."
+    },
+    "/inboxes/{inboxId}": {
+      "schema": { "$ref": "#/entities/Inbox" },
+      "description": "Stores communication channel instances."
+    },
+    "/settings/{settingId}": {
+      "schema": { "$ref": "#/entities/Settings" },
+      "description": "Stores global application settings."
+    },
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Stores user profiles and roles."
+    },
+    "/vehicles/{vehicleId}": {
+      "schema": { "$ref": "#/entities/Vehicle" },
+      "description": "Stores the vehicle catalog."
+    },
+    "/tickets/{ticketId}": {
+      "schema": { "$ref": "#/entities/Ticket" },
+      "description": "Stores customer tickets/conversations."
+    },
+    "/tickets/{ticketId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/Message" },
+      "description": "Stores messages for a specific ticket."
+    },
+    "/leads/{leadId}": {
+      "schema": { "$ref": "#/entities/Lead" },
+      "description": "Stores leads for the Kanban boards."
+    },
+    "/customers/{customerId}": {
+      "schema": { "$ref": "#/entities/Customer" },
+      "description": "Stores customer profiles."
+    }
+  }
+}
