@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Bot, MessageSquare, Clock, Zap, Link2, Save, CheckCircle2, Loader2 } from 'lucide-react';
+import { Bot, MessageSquare, Clock, Zap, Link2, Save, CheckCircle2 } from 'lucide-react';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import { handleFirestoreError, OperationType } from '../utils/firestoreErrorHandler';
 
 interface DaySchedule {
   day: string;
@@ -14,7 +15,6 @@ export default function Automation() {
   const [isBotEnabled, setIsBotEnabled] = useState(true);
   const [botMode, setBotMode] = useState<'always' | 'outside_hours'>('outside_hours');
   const [saved, setSaved] = useState(false);
-  const [loading, setLoading] = useState(true);
 
   const [schedule, setSchedule] = useState<DaySchedule[]>([
     { day: 'Segunda-feira', isOpen: true, start: '09:00', end: '18:00' },
@@ -25,8 +25,13 @@ export default function Automation() {
     { day: 'Sábado', isOpen: true, start: '09:00', end: '13:00' },
     { day: 'Domingo', isOpen: false, start: '09:00', end: '18:00' },
   ]);
-
   const [prompt, setPrompt] = useState("Você é um assistente virtual de uma concessionária de veículos de luxo. Seja educado, persuasivo e objetivo. Se o cliente perguntar sobre financiamento, informe que trabalhamos com as principais taxas do mercado e peça o CPF para simulação. Se o cliente quiser vender um carro, peça fotos e o ano/modelo para avaliação.");
+  const [followUpEnabled, setFollowUpEnabled] = useState(true);
+  const [followUpMessage, setFollowUpMessage] = useState("Olá {nome_cliente}, como estão os primeiros dias com o seu {veiculo}? Tudo certo? Qualquer dúvida estamos à disposição!");
+  const [docEnabled, setDocEnabled] = useState(true);
+  const [docMessage, setDocMessage] = useState("Olá {nome_cliente}! Passando para avisar que o documento do seu {veiculo} já está disponível para retirada em nossa loja.");
+  const [birthdayEnabled, setBirthdayEnabled] = useState(true);
+  const [birthdayMessage, setBirthdayMessage] = useState("Parabéns {nome_cliente}! A equipe Elite Motors deseja um feliz aniversário e muitas felicidades. Que tal comemorar de carro novo? 🎉");
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -39,11 +44,15 @@ export default function Automation() {
           if (data.botMode) setBotMode(data.botMode);
           if (data.schedule) setSchedule(data.schedule);
           if (data.prompt) setPrompt(data.prompt);
+          if (data.followUpEnabled !== undefined) setFollowUpEnabled(data.followUpEnabled);
+          if (data.followUpMessage) setFollowUpMessage(data.followUpMessage);
+          if (data.docEnabled !== undefined) setDocEnabled(data.docEnabled);
+          if (data.docMessage) setDocMessage(data.docMessage);
+          if (data.birthdayEnabled !== undefined) setBirthdayEnabled(data.birthdayEnabled);
+          if (data.birthdayMessage) setBirthdayMessage(data.birthdayMessage);
         }
       } catch (error) {
-        console.error("Error fetching automation settings:", error);
-      } finally {
-        setLoading(false);
+        handleFirestoreError(error, OperationType.GET, 'settings/automation');
       }
     };
     fetchSettings();
@@ -57,28 +66,24 @@ export default function Automation() {
 
   const handleSave = async () => {
     try {
-      setSaved(true);
-      const docRef = doc(db, 'settings', 'automation');
-      await setDoc(docRef, {
+      await setDoc(doc(db, 'settings', 'automation'), {
         isBotEnabled,
         botMode,
         schedule,
-        prompt
-      }, { merge: true });
+        prompt,
+        followUpEnabled,
+        followUpMessage,
+        docEnabled,
+        docMessage,
+        birthdayEnabled,
+        birthdayMessage
+      });
+      setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (error) {
-      console.error("Error saving automation settings:", error);
-      setSaved(false);
+      handleFirestoreError(error, OperationType.WRITE, 'settings/automation');
     }
   };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
-      </div>
-    );
-  }
 
   return (
     <div className="p-8 h-full overflow-y-auto bg-slate-50">
@@ -234,13 +239,14 @@ export default function Automation() {
                     <p className="text-xs text-slate-500 mt-1">Enviado 7 dias após a venda</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" className="sr-only peer" defaultChecked />
+                    <input type="checkbox" className="sr-only peer" checked={followUpEnabled} onChange={(e) => setFollowUpEnabled(e.target.checked)} />
                     <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
                   </label>
                 </div>
                 <textarea 
                   className="w-full h-24 p-3 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none"
-                  defaultValue="Olá {nome_cliente}, como estão os primeiros dias com o seu {veiculo}? Tudo certo? Qualquer dúvida estamos à disposição!"
+                  value={followUpMessage}
+                  onChange={(e) => setFollowUpMessage(e.target.value)}
                 />
               </div>
 
@@ -252,13 +258,14 @@ export default function Automation() {
                     <p className="text-xs text-slate-500 mt-1">Quando doc estiver pronto</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" className="sr-only peer" defaultChecked />
+                    <input type="checkbox" className="sr-only peer" checked={docEnabled} onChange={(e) => setDocEnabled(e.target.checked)} />
                     <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
                   </label>
                 </div>
                 <textarea 
                   className="w-full h-24 p-3 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none"
-                  defaultValue="Olá {nome_cliente}! Passando para avisar que o documento do seu {veiculo} já está disponível para retirada em nossa loja."
+                  value={docMessage}
+                  onChange={(e) => setDocMessage(e.target.value)}
                 />
               </div>
 
@@ -270,13 +277,14 @@ export default function Automation() {
                     <p className="text-xs text-slate-500 mt-1">No dia do aniversário</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" className="sr-only peer" defaultChecked />
+                    <input type="checkbox" className="sr-only peer" checked={birthdayEnabled} onChange={(e) => setBirthdayEnabled(e.target.checked)} />
                     <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
                   </label>
                 </div>
                 <textarea 
                   className="w-full h-24 p-3 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none"
-                  defaultValue="Parabéns {nome_cliente}! A equipe Elite Motors deseja um feliz aniversário e muitas felicidades. Que tal comemorar de carro novo? 🎉"
+                  value={birthdayMessage}
+                  onChange={(e) => setBirthdayMessage(e.target.value)}
                 />
               </div>
             </div>

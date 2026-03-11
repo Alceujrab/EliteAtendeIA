@@ -1,43 +1,43 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts';
-import { Download, Calendar, FileText, Users, PieChart as PieChartIcon, Car, TrendingUp, Filter, Loader2 } from 'lucide-react';
+import { Download, Calendar, FileText, Users, PieChart as PieChartIcon, Car, TrendingUp, Filter } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, onSnapshot, query } from 'firebase/firestore';
 import { db } from '../firebase';
-import { Lead, Ticket, AppUser } from '../types';
+import { Lead, AppUser, Ticket } from '../types';
+import { handleFirestoreError, OperationType } from '../utils/firestoreErrorHandler';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
 export default function Reports() {
   const [dateRange, setDateRange] = useState('30'); // days
   const [selectedOperator, setSelectedOperator] = useState('all');
-  
   const [leads, setLeads] = useState<Lead[]>([]);
-  const [tickets, setTickets] = useState<Ticket[]>([]);
   const [users, setUsers] = useState<AppUser[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [tickets, setTickets] = useState<Ticket[]>([]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [leadsSnap, ticketsSnap, usersSnap] = await Promise.all([
-          getDocs(collection(db, 'leads')),
-          getDocs(collection(db, 'tickets')),
-          getDocs(collection(db, 'users'))
-        ]);
+    const leadsQ = query(collection(db, 'leads'));
+    const unsubscribeLeads = onSnapshot(leadsQ, (snapshot) => {
+      setLeads(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Lead[]);
+    }, (error) => handleFirestoreError(error, OperationType.LIST, 'leads'));
 
-        setLeads(leadsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Lead)));
-        setTickets(ticketsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ticket)));
-        setUsers(usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as AppUser)));
-      } catch (error) {
-        console.error("Error fetching report data:", error);
-      } finally {
-        setLoading(false);
-      }
+    const usersQ = query(collection(db, 'users'));
+    const unsubscribeUsers = onSnapshot(usersQ, (snapshot) => {
+      setUsers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as AppUser[]);
+    }, (error) => handleFirestoreError(error, OperationType.LIST, 'users'));
+
+    const ticketsQ = query(collection(db, 'tickets'));
+    const unsubscribeTickets = onSnapshot(ticketsQ, (snapshot) => {
+      setTickets(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Ticket[]);
+    }, (error) => handleFirestoreError(error, OperationType.LIST, 'tickets'));
+
+    return () => {
+      unsubscribeLeads();
+      unsubscribeUsers();
+      unsubscribeTickets();
     };
-
-    fetchData();
   }, []);
 
   // Calculate metrics based on data
@@ -56,7 +56,7 @@ export default function Reports() {
         name: user.name,
         resolvidos,
         pendentes,
-        tempoMedio: Math.floor(Math.random() * 30) + 5 // Mocked average response time for now
+        tempoMedio: Math.floor(Math.random() * 30) + 5 // Mocked for now, needs real calculation
       };
     });
   }, [selectedOperator, users, leads]);
@@ -117,7 +117,7 @@ export default function Reports() {
     doc.text(`Período: Últimos ${dateRange} dias`, pageWidth - 14, 30, { align: 'right' });
     if (selectedOperator !== 'all') {
       const opName = users.find(u => u.id === selectedOperator)?.name;
-      doc.text(`Operador: ${opName}`, pageWidth - 14, 35, { align: 'right' });
+      doc.text(`Operador: ${opName || ''}`, pageWidth - 14, 35, { align: 'right' });
       doc.text(`Emissão: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, pageWidth - 14, 40, { align: 'right' });
     } else {
       doc.text(`Emissão: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, pageWidth - 14, 35, { align: 'right' });
@@ -261,14 +261,6 @@ export default function Reports() {
 
     addFooterAndSave(doc, pageWidth, 'relatorio-funil.pdf');
   };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
-      </div>
-    );
-  }
 
   return (
     <div className="p-8 h-full overflow-y-auto bg-slate-50">

@@ -1,33 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { ShieldCheck, Plus, MoreHorizontal, Loader2 } from 'lucide-react';
-import { collection, query, onSnapshot } from 'firebase/firestore';
+import { ShieldCheck, Plus, MoreHorizontal } from 'lucide-react';
+import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
-import { AppUser } from '../types';
+import { handleFirestoreError, OperationType } from '../utils/firestoreErrorHandler';
+
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: 'admin' | 'manager' | 'agent';
+  avatar?: string;
+  inboxes?: string[];
+}
 
 export default function Users() {
-  const [users, setUsers] = useState<AppUser[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [users, setUsers] = useState<User[]>([]);
 
   useEffect(() => {
-    const q = query(collection(db, 'users'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetchedUsers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AppUser));
-      setUsers(fetchedUsers);
-      setLoading(false);
+    const unsubscribe = onSnapshot(collection(db, 'users'), (snapshot) => {
+      const usersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+      setUsers(usersData);
     }, (error) => {
-      console.error("Error fetching users:", error);
-      setLoading(false);
+      handleFirestoreError(error, OperationType.LIST, 'users');
     });
+
     return () => unsubscribe();
   }, []);
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-full bg-slate-50">
-        <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
-      </div>
-    );
-  }
 
   return (
     <div className="p-8 h-full overflow-y-auto bg-slate-50">
@@ -58,7 +56,13 @@ export default function Users() {
                   <tr key={user.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <img src={user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random`} alt={user.name} className="w-10 h-10 rounded-full object-cover border border-slate-200" />
+                        {user.avatar ? (
+                          <img src={user.avatar} alt={user.name} className="w-10 h-10 rounded-full object-cover border border-slate-200" referrerPolicy="no-referrer" />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold border border-blue-200">
+                            {user.name.charAt(0)}
+                          </div>
+                        )}
                         <div>
                           <p className="font-medium text-slate-900">{user.name}</p>
                           <p className="text-xs text-slate-500">{user.email}</p>
@@ -77,11 +81,14 @@ export default function Users() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-wrap gap-1">
-                        {user.inboxes?.map(inbox => (
+                        {user.inboxes && user.inboxes.map(inbox => (
                           <span key={inbox} className="bg-slate-100 text-slate-600 text-xs px-2 py-1 rounded">
                             {inbox}
                           </span>
                         ))}
+                        {(!user.inboxes || user.inboxes.length === 0) && (
+                          <span className="text-slate-400 text-xs italic">Todas</span>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4 text-right">

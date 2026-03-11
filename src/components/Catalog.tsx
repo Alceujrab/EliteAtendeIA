@@ -4,7 +4,7 @@ import { Vehicle } from '../types';
 import { useVehicles } from '../VehicleContext';
 
 export default function Catalog() {
-  const { vehicles, setVehicles } = useVehicles();
+  const { vehicles, saveVehiclesToFirebase } = useVehicles();
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [importUrl, setImportUrl] = useState('');
   const [isImporting, setIsImporting] = useState(false);
@@ -102,25 +102,25 @@ export default function Catalog() {
         }
 
         return {
-          id: v.id || v.codigo || v.placa || v.ID || `imported-${Date.now()}-${index}`,
-          brand: String(brand),
-          model: String(model),
+          id: String(v.id || v.codigo || v.placa || v.ID || `imported-${Date.now()}-${index}`).substring(0, 99),
+          brand: String(brand || 'Marca Desconhecida').substring(0, 49),
+          model: String(model || 'Modelo Desconhecido').substring(0, 99),
           year: parseInt(String(yearStr).replace(/\D/g, '').substring(0, 4)) || 2020,
           price: parseFloat(String(priceStr).replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
           mileage: parseInt(String(mileageStr).replace(/\D/g, '')) || 0,
-          image: typeof image === 'string' ? image : (image as any)?.url || 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=800',
-          images: images.map(img => typeof img === 'string' ? img : (img as any)?.url).filter(Boolean),
-          features: features.map(f => String(f)),
-          description: v.DESCRIPTION || v.descricao || v.observacao || '',
-          fuel: v.FUEL || v.combustivel || '',
-          transmission: v.GEAR || v.cambio || '',
-          color: v.COLOR || v.cor || '',
-          doors: parseInt(v.DOORS || v.portas || '0'),
-          plate: v.PLATE || v.placa || ''
+          image: (typeof image === 'string' ? image : (image as any)?.url || 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=800').substring(0, 999),
+          images: images.map(img => typeof img === 'string' ? img : (img as any)?.url).filter(Boolean).slice(0, 19).map(i => String(i).substring(0, 999)),
+          features: features.map(f => String(f).substring(0, 99)).slice(0, 49),
+          description: String(v.DESCRIPTION || v.descricao || v.observacao || '').substring(0, 1999),
+          fuel: String(v.FUEL || v.combustivel || '').substring(0, 49),
+          transmission: String(v.GEAR || v.cambio || '').substring(0, 49),
+          color: String(v.COLOR || v.cor || '').substring(0, 49),
+          doors: Math.max(1, parseInt(String(v.DOORS || v.portas || '0').replace(/\D/g, '')) || 0),
+          plate: String(v.PLATE || v.placa || '').substring(0, 19)
         };
       });
 
-      setVehicles(mappedVehicles);
+      await saveVehiclesToFirebase(mappedVehicles);
       setIsImportModalOpen(false);
       setImportUrl('');
       alert(`${mappedVehicles.length} veículos importados com sucesso!`);

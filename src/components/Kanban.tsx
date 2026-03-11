@@ -1,10 +1,11 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Lead, Message } from '../types';
+import { Lead, Message, AppUser } from '../types';
 import { MoreHorizontal, Phone, DollarSign, Car, EyeOff, Eye, Filter, Edit2, Bot, Clock, Calendar, MessageSquare, CheckCircle2, Send, Loader2, Plus } from 'lucide-react';
 import { useAuth } from '../AuthProvider';
-import { collection, query, where, getDocs, orderBy, limit, onSnapshot, doc, setDoc, addDoc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, limit, onSnapshot, doc, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { GoogleGenAI, Type } from '@google/genai';
+import { handleFirestoreError, OperationType } from '../utils/firestoreErrorHandler';
 
 const salesColumns = [
   { id: 'new', title: 'Novo Lead' },
@@ -32,9 +33,8 @@ export default function Kanban() {
   const { appUser } = useAuth();
   const [activeTab, setActiveTab] = useState<'sales' | 'sourcing' | 'post_sales'>('sales');
   const [leads, setLeads] = useState<Lead[]>([]);
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<AppUser[]>([]);
   const [hiddenColumns, setHiddenColumns] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
   
   // Filters
   const [filterUser, setFilterUser] = useState<string>('all');
@@ -72,30 +72,31 @@ export default function Kanban() {
       if (fetchedInboxes.length > 0 && !selectedInboxId) {
         setSelectedInboxId(fetchedInboxes[0].id);
       }
-    });
-    return () => unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    const q = query(collection(db, 'users'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetchedUsers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setUsers(fetchedUsers);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    const q = query(collection(db, 'leads'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetchedLeads = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Lead));
-      setLeads(fetchedLeads);
-      setLoading(false);
     }, (error) => {
-      console.error("Error fetching leads:", error);
-      setLoading(false);
+      handleFirestoreError(error, OperationType.LIST, 'inboxes');
     });
-    return () => unsubscribe();
+
+    const leadsQ = query(collection(db, 'leads'), orderBy('createdAt', 'desc'));
+    const unsubscribeLeads = onSnapshot(leadsQ, (snapshot) => {
+      const fetchedLeads = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Lead[];
+      setLeads(fetchedLeads);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'leads');
+    });
+
+    const usersQ = query(collection(db, 'users'));
+    const unsubscribeUsers = onSnapshot(usersQ, (snapshot) => {
+      const fetchedUsers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as AppUser[];
+      setUsers(fetchedUsers);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'users');
+    });
+
+    return () => {
+      unsubscribe();
+      unsubscribeLeads();
+      unsubscribeUsers();
+    };
   }, []);
 
   useEffect(() => {
@@ -222,7 +223,9 @@ export default function Kanban() {
       return;
     }
 
-    const leadData: Omit<Lead, 'id'> = {
+    const leadId = `L${Math.floor(Math.random() * 1000000)}`;
+    const lead: Lead = {
+      id: leadId,
       customerName: newLead.customerName,
       customerPhone: newLead.customerPhone,
       vehicleName: newLead.vehicleName,
@@ -235,7 +238,7 @@ export default function Kanban() {
     };
 
     try {
-      await addDoc(collection(db, 'leads'), leadData);
+      await setDoc(doc(db, 'leads', leadId), lead);
       setIsCreatingLead(false);
       setNewLead({
         customerName: '',
@@ -246,8 +249,7 @@ export default function Kanban() {
         type: 'sales'
       });
     } catch (error) {
-      console.error("Error creating lead:", error);
-      alert("Erro ao criar lead.");
+      handleFirestoreError(error, OperationType.CREATE, 'leads');
     }
   };
 
@@ -285,23 +287,15 @@ export default function Kanban() {
     e.preventDefault();
     const leadId = e.dataTransfer.getData('leadId');
     const lead = leads.find(l => l.id === leadId);
-    
     if (!lead) return;
 
     try {
-      const leadRef = doc(db, 'leads', leadId);
-      await updateDoc(leadRef, {
-        status: columnId,
-        lastEditedBy: appUser?.name || 'Desconhecido'
-      });
-
       // If moving to 'won' in sales, automatically create a post_sales copy
       if (activeTab === 'sales' && columnId === 'won' && lead.status !== 'won') {
-        const newPostSalesLead: Omit<Lead, 'id'> = {
-          customerName: lead.customerName,
-          customerPhone: lead.customerPhone,
-          vehicleName: lead.vehicleName,
-          value: lead.value,
+        const newPostSalesLeadId = `PS-${lead.id}`;
+        const newPostSalesLead: Lead = {
+          ...lead,
+          id: newPostSalesLeadId,
           type: 'post_sales',
           status: 'delivery',
           lastEditedBy: appUser?.name || 'Sistema',
@@ -312,11 +306,15 @@ export default function Kanban() {
             sevenDayCheckupDone: false
           }
         };
-        await addDoc(collection(db, 'leads'), newPostSalesLead);
+        await setDoc(doc(db, 'leads', newPostSalesLeadId), newPostSalesLead);
       }
+      
+      await updateDoc(doc(db, 'leads', leadId), {
+        status: columnId,
+        lastEditedBy: appUser?.name || 'Desconhecido'
+      });
     } catch (error) {
-      console.error("Error updating lead status:", error);
-      alert("Erro ao atualizar status do lead.");
+      handleFirestoreError(error, OperationType.UPDATE, 'leads');
     }
   };
 
@@ -328,16 +326,13 @@ export default function Kanban() {
 
   const saveLead = async (updatedLead: Lead) => {
     try {
-      const { id, ...leadData } = updatedLead;
-      const leadRef = doc(db, 'leads', id);
-      await updateDoc(leadRef, {
-        ...leadData,
+      await updateDoc(doc(db, 'leads', updatedLead.id), {
+        ...updatedLead,
         lastEditedBy: appUser?.name || 'Desconhecido'
       });
       setEditingLead(null);
     } catch (error) {
-      console.error("Error updating lead:", error);
-      alert("Erro ao salvar lead.");
+      handleFirestoreError(error, OperationType.UPDATE, 'leads');
     }
   };
 

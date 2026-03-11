@@ -1,23 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 import { Users, Clock, CheckCircle, MessageSquare, TrendingUp, TrendingDown } from 'lucide-react';
-
-const weeklyData = [
-  { name: 'Seg', tickets: 45 },
-  { name: 'Ter', tickets: 52 },
-  { name: 'Qua', tickets: 38 },
-  { name: 'Qui', tickets: 65 },
-  { name: 'Sex', tickets: 48 },
-  { name: 'Sáb', tickets: 25 },
-  { name: 'Dom', tickets: 15 },
-];
-
-const channelData = [
-  { name: 'WhatsApp', value: 450, color: '#10b981' },
-  { name: 'Email', value: 300, color: '#3b82f6' },
-  { name: 'Instagram', value: 200, color: '#ec4899' },
-  { name: 'Telefone', value: 50, color: '#64748b' },
-];
+import { collection, onSnapshot, query } from 'firebase/firestore';
+import { db } from '../firebase';
+import { Ticket } from '../types';
+import { handleFirestoreError, OperationType } from '../utils/firestoreErrorHandler';
 
 const StatCard = ({ title, value, icon: Icon, trend, trendUp }: any) => (
   <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
@@ -38,12 +25,61 @@ const StatCard = ({ title, value, icon: Icon, trend, trendUp }: any) => (
 );
 
 export default function Dashboard() {
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+
+  useEffect(() => {
+    const q = query(collection(db, 'tickets'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      setTickets(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Ticket[]);
+    }, (error) => handleFirestoreError(error, OperationType.LIST, 'tickets'));
+
+    return () => unsubscribe();
+  }, []);
+
+  const totalTickets = tickets.length;
+  const openTickets = tickets.filter(t => t.status === 'open').length;
+
+  const channelData = useMemo(() => {
+    const counts: Record<string, number> = {};
+    tickets.forEach(t => {
+      counts[t.channel] = (counts[t.channel] || 0) + 1;
+    });
+    return [
+      { name: 'WhatsApp', value: counts['whatsapp'] || 0, color: '#10b981' },
+      { name: 'Instagram', value: counts['instagram'] || 0, color: '#ec4899' },
+      { name: 'Email', value: counts['email'] || 0, color: '#3b82f6' },
+      { name: 'Telefone', value: counts['phone'] || 0, color: '#64748b' },
+    ].filter(c => c.value > 0);
+  }, [tickets]);
+
+  const weeklyData = useMemo(() => {
+    const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    const counts = [0, 0, 0, 0, 0, 0, 0];
+    
+    const now = new Date();
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    tickets.forEach(t => {
+      if (t.createdAt) {
+        const date = new Date(t.createdAt);
+        if (date >= sevenDaysAgo) {
+          counts[date.getDay()]++;
+        }
+      }
+    });
+
+    return days.map((day, index) => ({
+      name: day,
+      tickets: counts[index]
+    }));
+  }, [tickets]);
+
   return (
     <div className="p-8 h-full overflow-y-auto bg-slate-50">
       <div className="max-w-7xl mx-auto space-y-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatCard title="Total de Tickets (Mês)" value="1,284" icon={MessageSquare} trend="+12.5%" trendUp={true} />
-          <StatCard title="Tickets Abertos" value="42" icon={Users} trend="-5.2%" trendUp={true} />
+          <StatCard title="Total de Tickets (Mês)" value={totalTickets.toString()} icon={MessageSquare} trend="+12.5%" trendUp={true} />
+          <StatCard title="Tickets Abertos" value={openTickets.toString()} icon={Users} trend="-5.2%" trendUp={true} />
           <StatCard title="Tempo Médio de Resposta" value="14m" icon={Clock} trend="+2m" trendUp={false} />
           <StatCard title="Satisfação (CSAT)" value="4.8/5" icon={CheckCircle} trend="+0.2" trendUp={true} />
         </div>
