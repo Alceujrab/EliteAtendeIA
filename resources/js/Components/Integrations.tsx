@@ -7,9 +7,12 @@ interface Inbox {
   name: string;
   channel: 'whatsapp' | 'instagram';
   settings: any;
-  accessType: 'all' | 'specific';
-  allowedUsers: string[];
-  createdAt: string;
+  access_type: 'all' | 'specific';
+  accessType?: 'all' | 'specific';
+  allowed_users: string[];
+  allowedUsers?: string[];
+  createdAt?: string;
+  created_at?: string;
 }
 
 interface User {
@@ -63,8 +66,8 @@ export default function Integrations() {
       setEditingInbox(inbox);
       setName(inbox.name);
       setChannel(inbox.channel);
-      setAccessType(inbox.accessType);
-      setAllowedUsers(inbox.allowedUsers || []);
+      setAccessType(inbox.access_type || inbox.accessType || 'all');
+      setAllowedUsers(inbox.allowed_users || inbox.allowedUsers || []);
       setSettings(inbox.settings || {});
     } else {
       setEditingInbox(null);
@@ -167,7 +170,7 @@ export default function Integrations() {
               <div className="p-5 flex-1 flex flex-col gap-3">
                 <div className="flex items-center gap-2 text-sm text-slate-600">
                   <Users className="w-4 h-4" />
-                  <span>Acesso: {inbox.accessType === 'all' ? 'Todos os operadores' : `${inbox.allowedUsers.length} operador(es) específico(s)`}</span>
+                  <span>Acesso: {(inbox.access_type || inbox.accessType) === 'all' ? 'Todos os operadores' : `${(inbox.allowed_users || inbox.allowedUsers || []).length} operador(es) específico(s)`}</span>
                 </div>
                 {inbox.channel === 'whatsapp' && (
                   <div className="text-sm text-slate-600">

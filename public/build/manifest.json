@@ -67,7 +67,7 @@
     ]
   },
   "node_modules/canvg/lib/index.es.js": {
-    "file": "assets/index.es-Btn-WMKc.js",
+    "file": "assets/index.es-DRdcvkk7.js",
     "name": "index.es",
     "src": "node_modules/canvg/lib/index.es.js",
     "isDynamicEntry": true,
@@ -178,7 +178,7 @@
     ]
   },
   "resources/js/Pages/CrmApp.tsx": {
-    "file": "assets/CrmApp-3-zmACXR.js",
+    "file": "assets/CrmApp-CbkXFJpm.js",
     "name": "CrmApp",
     "src": "resources/js/Pages/CrmApp.tsx",
     "isEntry": true,
@@ -280,7 +280,7 @@
     ]
   },
   "resources/js/app.tsx": {
-    "file": "assets/app-BgMrDsNQ.js",
+    "file": "assets/app-bK0WiE6w.js",
     "name": "app",
     "src": "resources/js/app.tsx",
     "isEntry": true,
