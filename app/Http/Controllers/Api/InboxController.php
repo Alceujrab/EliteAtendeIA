@@ -3,47 +3,59 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Inbox;
 use Illuminate\Http\Request;
 
 class InboxController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        return response()->json(\App\Models\Inbox::all());
+        return response()->json(Inbox::all());
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        //
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'channel' => 'required|in:whatsapp,instagram',
+        ]);
+
+        $inbox = Inbox::create([
+            'name' => $request->name,
+            'channel' => $request->channel,
+            'access_type' => $request->input('accessType', 'all'),
+            'allowed_users' => $request->input('allowedUsers', []),
+            'settings' => $request->input('settings', []),
+        ]);
+
+        return response()->json($inbox, 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(string $id)
     {
-        //
+        return response()->json(Inbox::findOrFail($id));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, string $id)
     {
-        //
+        $inbox = Inbox::findOrFail($id);
+
+        $inbox->update([
+            'name' => $request->input('name', $inbox->name),
+            'channel' => $request->input('channel', $inbox->channel),
+            'access_type' => $request->input('accessType', $inbox->access_type),
+            'allowed_users' => $request->input('allowedUsers', $inbox->allowed_users),
+            'settings' => $request->input('settings', $inbox->settings),
+        ]);
+
+        return response()->json($inbox);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(string $id)
     {
-        //
+        $inbox = Inbox::findOrFail($id);
+        $inbox->delete();
+
+        return response()->json(['message' => 'Caixa de entrada excluída com sucesso']);
     }
 }

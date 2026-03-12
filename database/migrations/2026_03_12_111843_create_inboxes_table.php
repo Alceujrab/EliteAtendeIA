@@ -16,6 +16,8 @@ return new class extends Migration
             $table->string('name');
             $table->string('channel');
             $table->string('status')->default('active');
+            $table->string('access_type')->default('all');
+            $table->json('allowed_users')->nullable();
             $table->json('settings')->nullable();
             $table->timestamps();
         });
