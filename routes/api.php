@@ -48,9 +48,11 @@ Route::put('settings/{key}', [SettingController::class, 'update']);
 Route::get('webhook-events', [WebhookEventController::class, 'index']);
 Route::delete('webhook-events/{id}', [WebhookEventController::class, 'destroy']);
 
-// Webhooks externos (recepção)
+// Webhooks externos (recepção) - ambas URLs funcionam
 Route::post('webhooks/evolution', [WebhookEventController::class, 'storeEvolution']);
 Route::match(['get', 'post'], 'webhooks/instagram', [WebhookEventController::class, 'storeInstagram']);
+Route::post('webhook/evolution', [WebhookEventController::class, 'storeEvolution']);
+Route::match(['get', 'post'], 'webhook/instagram', [WebhookEventController::class, 'storeInstagram']);
 
 // ========================
 // Chatbot IA

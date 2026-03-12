@@ -131,7 +131,7 @@ export default function Integrations() {
     );
   };
 
-  const webhookUrl = `${window.location.origin}/api/webhook`;
+  const webhookUrl = `${window.location.origin}/api/webhooks`;
 
   return (
     <div className="p-8 h-full overflow-y-auto bg-slate-50">

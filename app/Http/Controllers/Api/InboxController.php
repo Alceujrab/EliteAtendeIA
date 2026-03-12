@@ -111,31 +111,55 @@ class InboxController extends Controller
             $instances = $response->json();
             $instanceFound = false;
             $instanceStatus = 'não encontrada';
+            $foundNames = [];
 
-            // Verificar se a instância existe
+            // Verificar se a instância existe (cobrir vários formatos da Evolution API)
             if ($instance && is_array($instances)) {
                 foreach ($instances as $inst) {
-                    $instName = $inst['instance']['instanceName'] ?? ($inst['instanceName'] ?? null);
-                    if ($instName === $instance) {
+                    // Tentar vários caminhos possíveis do nome da instância
+                    $possibleNames = [
+                        $inst['instance']['instanceName'] ?? null,
+                        $inst['instance']['name'] ?? null,
+                        $inst['instanceName'] ?? null,
+                        $inst['name'] ?? null,
+                    ];
+
+                    $instName = null;
+                    foreach ($possibleNames as $pn) {
+                        if ($pn) { $instName = $pn; break; }
+                    }
+
+                    if ($instName) {
+                        $foundNames[] = $instName;
+                    }
+
+                    // Comparação case-insensitive
+                    if ($instName && strtolower($instName) === strtolower($instance)) {
                         $instanceFound = true;
-                        $instanceStatus = $inst['instance']['status'] ?? ($inst['status'] ?? 'desconhecido');
+                        $instanceStatus = $inst['instance']['status']
+                            ?? $inst['instance']['connectionStatus']
+                            ?? $inst['status']
+                            ?? $inst['connectionStatus']
+                            ?? 'conectado';
                         break;
                     }
                 }
             }
 
             $totalInstances = is_array($instances) ? count($instances) : 0;
+            $namesStr = implode(', ', $foundNames);
 
             return response()->json([
                 'success' => true,
                 'message' => $instanceFound
-                    ? "✅ Conexão OK! Instância \"{$instance}\" encontrada (status: {$instanceStatus}). Total de instâncias: {$totalInstances}."
+                    ? "✅ Conexão OK! Instância \"{$instance}\" encontrada (status: {$instanceStatus}). Total: {$totalInstances}."
                     : ($instance
-                        ? "⚠️ Conexão OK com a API, mas a instância \"{$instance}\" não foi encontrada. Total de instâncias: {$totalInstances}."
-                        : "✅ Conexão OK! {$totalInstances} instância(s) encontrada(s)."),
+                        ? "⚠️ Conexão OK com a API, mas a instância \"{$instance}\" não foi encontrada. Instâncias disponíveis: [{$namesStr}]. Total: {$totalInstances}."
+                        : "✅ Conexão OK! {$totalInstances} instância(s) encontrada(s): [{$namesStr}]."),
                 'instanceFound' => $instanceFound,
                 'instanceStatus' => $instanceStatus,
                 'totalInstances' => $totalInstances,
+                'availableInstances' => $foundNames,
             ]);
 
         } catch (\Exception $e) {
