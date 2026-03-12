@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Instagram, MessageCircle, Copy, CheckCircle2, ExternalLink, Save, Plus, Trash2, Edit2, X, Users, Inbox as InboxIcon } from 'lucide-react';
+import { Instagram, MessageCircle, Copy, CheckCircle2, ExternalLink, Save, Plus, Trash2, Edit2, X, Users, Inbox as InboxIcon, Zap, Loader2 } from 'lucide-react';
 import axios from 'axios';
 
 interface Inbox {
@@ -28,6 +28,8 @@ export default function Integrations() {
   const [editingInbox, setEditingInbox] = useState<Inbox | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{success: boolean; message: string} | null>(null);
 
   // Form state
   const [name, setName] = useState('');
@@ -391,6 +393,46 @@ export default function Integrations() {
                       </div>
                     </div>
                   )}
+
+                  {/* Botão Testar Conexão */}
+                  <div className="mt-6 border-t border-slate-100 pt-6">
+                    <button
+                      type="button"
+                      disabled={testing}
+                      onClick={async () => {
+                        setTesting(true);
+                        setTestResult(null);
+                        try {
+                          const res = await axios.post('/api/inboxes/test-connection', { channel, settings });
+                          setTestResult(res.data);
+                        } catch (err: any) {
+                          setTestResult({
+                            success: false,
+                            message: err.response?.data?.message || 'Erro ao testar conexão. Verifique os dados.',
+                          });
+                        } finally {
+                          setTesting(false);
+                        }
+                      }}
+                      className="flex items-center gap-2 px-4 py-2.5 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50 font-medium text-sm"
+                    >
+                      {testing ? (
+                        <><Loader2 className="w-4 h-4 animate-spin" /> Testando...</>
+                      ) : (
+                        <><Zap className="w-4 h-4" /> Testar Conexão</>
+                      )}
+                    </button>
+
+                    {testResult && (
+                      <div className={`mt-3 p-4 rounded-lg border text-sm ${
+                        testResult.success
+                          ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                          : 'bg-red-50 border-red-200 text-red-800'
+                      }`}>
+                        <p className="font-medium">{testResult.message}</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </form>
             </div>

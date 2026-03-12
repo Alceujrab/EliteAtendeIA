@@ -23,6 +23,7 @@ Route::get('/user', function (Request $request) {
 Route::apiResource('tickets', TicketController::class);
 Route::apiResource('messages', MessageController::class);
 Route::apiResource('inboxes', InboxController::class);
+Route::post('inboxes/test-connection', [InboxController::class, 'testConnection']);
 Route::apiResource('leads', LeadController::class);
 Route::apiResource('users', UserController::class);
 Route::apiResource('customers', CustomerController::class);
