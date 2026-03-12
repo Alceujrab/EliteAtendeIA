@@ -23,6 +23,15 @@ class WebhookEventController extends Controller
      */
     public function storeEvolution(Request $request)
     {
+        // GET = teste de verificação
+        if ($request->isMethod('get')) {
+            return response()->json([
+                'status' => 'ok',
+                'message' => '✅ Webhook Evolution está ativo e pronto para receber mensagens.',
+                'method' => 'POST para enviar dados',
+            ]);
+        }
+
         $event = WebhookEvent::create([
             'source' => 'evolution',
             'payload' => json_encode($request->all()),
