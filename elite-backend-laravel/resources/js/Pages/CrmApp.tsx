@@ -1,15 +1,18 @@
+import { Head } from '@inertiajs/react';
 import React, { useState } from 'react';
-import WebhookProcessor from './components/WebhookProcessor';
-import Dashboard from './components/Dashboard';
-import Inbox from './components/Inbox';
-import Kanban from './components/Kanban';
-import Customers from './components/Customers';
-import Integrations from './components/Integrations';
-import Reports from './components/Reports';
-import Users from './components/Users';
-import { AuthProvider } from './AuthProvider';
-import { VehicleProvider } from './VehicleContext';
-import { MessageCircle, LayoutDashboard, Trello, Users as UsersIcon, Settings, BarChart, HardDrive } from 'lucide-react';
+import WebhookProcessor from '../Components/WebhookProcessor';
+import Dashboard from '../Components/Dashboard';
+import Inbox from '../Components/Inbox';
+import Kanban from '../Components/Kanban';
+import Customers from '../Components/Customers';
+import Integrations from '../Components/Integrations';
+import Reports from '../Components/Reports';
+import Users from '../Components/Users';
+import Catalog from '../Components/Catalog';
+import Automation from '../Components/Automation';
+import { AuthProvider } from '../AuthProvider';
+import { VehicleProvider } from '../VehicleContext';
+import { MessageCircle, LayoutDashboard, Trello, Users as UsersIcon, Settings, BarChart, HardDrive, Car, Bot } from 'lucide-react';
 
 function AppContent() {
   const [activeTab, setActiveTab] = useState('inbox');
@@ -23,6 +26,8 @@ function AppContent() {
       case 'reports': return <Reports />;
       case 'users': return <Users />;
       case 'integrations': return <Integrations />;
+      case 'catalog': return <Catalog />;
+      case 'automation': return <Automation />;
       default: return <Inbox setActiveTab={setActiveTab} />;
     }
   };
@@ -60,6 +65,11 @@ function AppContent() {
             <span className="hidden md:block ml-3 font-medium text-sm">Clientes</span>
           </button>
 
+          <button onClick={() => setActiveTab('catalog')} className={`flex items-center px-4 md:px-6 py-3 transition-colors ${activeTab === 'catalog' ? 'bg-blue-600/10 text-blue-500 border-r-[3px] border-blue-500' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'}`}>
+            <Car className="w-5 h-5 shrink-0" />
+            <span className="hidden md:block ml-3 font-medium text-sm">Catálogo</span>
+          </button>
+
           <button onClick={() => setActiveTab('reports')} className={`flex items-center px-4 md:px-6 py-3 transition-colors ${activeTab === 'reports' ? 'bg-blue-600/10 text-blue-500 border-r-[3px] border-blue-500' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'}`}>
             <BarChart className="w-5 h-5 shrink-0" />
             <span className="hidden md:block ml-3 font-medium text-sm">Relatórios</span>
@@ -73,6 +83,11 @@ function AppContent() {
           <button onClick={() => setActiveTab('integrations')} className={`flex items-center px-4 md:px-6 py-3 transition-colors ${activeTab === 'integrations' ? 'bg-blue-600/10 text-blue-500 border-r-[3px] border-blue-500' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'}`}>
             <HardDrive className="w-5 h-5 shrink-0" />
             <span className="hidden md:block ml-3 font-medium text-sm">Integrações</span>
+          </button>
+
+          <button onClick={() => setActiveTab('automation')} className={`flex items-center px-4 md:px-6 py-3 transition-colors ${activeTab === 'automation' ? 'bg-blue-600/10 text-blue-500 border-r-[3px] border-blue-500' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'}`}>
+            <Bot className="w-5 h-5 shrink-0" />
+            <span className="hidden md:block ml-3 font-medium text-sm">Automação & Chatbot</span>
           </button>
 
           <button onClick={() => setActiveTab('users')} className={`flex items-center px-4 md:px-6 py-3 transition-colors ${activeTab === 'users' ? 'bg-blue-600/10 text-blue-500 border-r-[3px] border-blue-500' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'}`}>
@@ -90,14 +105,13 @@ function AppContent() {
   );
 }
 
-function App() {
+export default function CrmApp() {
   return (
     <AuthProvider>
       <VehicleProvider>
+        <Head title="Crm" />
         <AppContent />
       </VehicleProvider>
     </AuthProvider>
   );
 }
-
-export default App;

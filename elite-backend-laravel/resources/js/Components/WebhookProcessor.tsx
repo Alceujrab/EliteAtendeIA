@@ -1,45 +1,49 @@
 import React, { useEffect } from 'react';
-import { collection, onSnapshot, doc, getDoc, getDocs, query, where, addDoc, updateDoc, deleteDoc, setDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import axios from 'axios';
 
 export default function WebhookProcessor() {
   useEffect(() => {
-    const q = query(collection(db, 'webhook_events'));
-    const unsubscribe = onSnapshot(q, async (snapshot) => {
-      for (const change of snapshot.docChanges()) {
-        if (change.type === 'added') {
-          const event = change.doc.data();
-          const eventId = change.doc.id;
-          
+    const processEvents = async () => {
+      try {
+        // Fetch pending webhook events from the API
+        const res = await axios.get('/api/webhook-events');
+        const events = res.data;
+
+        for (const event of events) {
           try {
             if (event.source === 'evolution') {
-              await processEvolutionEvent(JSON.parse(event.payload), eventId);
+              await processEvolutionEvent(JSON.parse(event.payload), event.id);
             } else if (event.source === 'instagram') {
-              await processInstagramEvent(JSON.parse(event.payload), eventId);
+              await processInstagramEvent(JSON.parse(event.payload), event.id);
             }
             // Delete the event after successful processing
-            await deleteDoc(doc(db, 'webhook_events', eventId));
+            await axios.delete(`/api/webhook-events/${event.id}`);
           } catch (error) {
             console.error("Error processing webhook event:", error);
           }
         }
+      } catch (error) {
+        // Silently fail - endpoint might not exist yet
+        console.error("Error fetching webhook events:", error);
       }
-    });
+    };
 
-    return () => unsubscribe();
+    processEvents();
+    const interval = setInterval(processEvents, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   const getInboxId = async (channel: 'whatsapp' | 'instagram', identifier: string) => {
     try {
-      const inboxesSnap = await getDocs(collection(db, 'inboxes'));
-      for (const doc of inboxesSnap.docs) {
-        const data = doc.data();
-        if (data.channel === channel) {
-          if (channel === 'whatsapp' && data.settings?.evolutionInstance === identifier) {
-            return doc.id;
+      const res = await axios.get('/api/inboxes');
+      const inboxes = res.data;
+      for (const inbox of inboxes) {
+        if (inbox.channel === channel) {
+          if (channel === 'whatsapp' && inbox.settings?.evolutionInstance === identifier) {
+            return inbox.id;
           }
-          if (channel === 'instagram' && data.settings?.instagramPageId === identifier) {
-            return doc.id;
+          if (channel === 'instagram' && inbox.settings?.instagramPageId === identifier) {
+            return inbox.id;
           }
         }
       }
@@ -105,14 +109,20 @@ export default function WebhookProcessor() {
       const timestamp = new Date().toISOString();
 
       const ticketId = `whatsapp_${customerPhone}`;
-      const ticketRef = doc(db, "tickets", ticketId);
-      
       const inboxId = await getInboxId('whatsapp', instanceName);
 
-      const docSnap = await getDoc(ticketRef);
-      
-      if (!docSnap.exists()) {
-        const newTicket = {
+      // Check if ticket exists
+      let ticketExists = false;
+      try {
+        const ticketRes = await axios.get(`/api/tickets/${ticketId}`);
+        ticketExists = ticketRes.status === 200;
+      } catch {
+        ticketExists = false;
+      }
+
+      if (!ticketExists) {
+        await axios.post('/api/tickets', {
+          id: ticketId,
           customerName: pushName,
           customerPhone: customerPhone,
           channel: "whatsapp",
@@ -122,10 +132,9 @@ export default function WebhookProcessor() {
           tags: [],
           inbox: inboxId,
           fromWebhook: true
-        };
-        await setDoc(ticketRef, newTicket);
+        });
       } else {
-        await updateDoc(ticketRef, {
+        await axios.put(`/api/tickets/${ticketId}`, {
           lastMessage: text,
           updatedAt: timestamp,
           fromWebhook: true
@@ -133,9 +142,9 @@ export default function WebhookProcessor() {
       }
 
       const messageId = messageData.key.id || eventId;
-      const messageRef = doc(db, `tickets/${ticketId}/messages`, messageId);
-      
       const newMessage: any = {
+        id: messageId,
+        ticketId: ticketId,
         sender: fromMe ? "agent" : "customer",
         text: text,
         timestamp: timestamp,
@@ -149,7 +158,7 @@ export default function WebhookProcessor() {
         newMessage.mediaUrl = mediaUrl;
       }
 
-      await setDoc(messageRef, newMessage, { merge: true });
+      await axios.post('/api/messages', newMessage);
     }
   };
 
@@ -169,12 +178,18 @@ export default function WebhookProcessor() {
               const timestamp = new Date(webhookEvent.timestamp || Date.now()).toISOString();
               
               const ticketId = `instagram_${senderId}`;
-              const ticketRef = doc(db, "tickets", ticketId);
 
-              const docSnap = await getDoc(ticketRef);
+              let ticketExists = false;
+              try {
+                const ticketRes = await axios.get(`/api/tickets/${ticketId}`);
+                ticketExists = ticketRes.status === 200;
+              } catch {
+                ticketExists = false;
+              }
 
-              if (!docSnap.exists()) {
-                const newTicket = {
+              if (!ticketExists) {
+                await axios.post('/api/tickets', {
+                  id: ticketId,
                   customerName: `Instagram User (${senderId})`,
                   customerPhone: senderId,
                   channel: "instagram",
@@ -184,23 +199,23 @@ export default function WebhookProcessor() {
                   tags: ["Instagram DM"],
                   inbox: inboxId,
                   fromWebhook: true
-                };
-                await setDoc(ticketRef, newTicket);
+                });
               } else {
-                await updateDoc(ticketRef, {
+                await axios.put(`/api/tickets/${ticketId}`, {
                   lastMessage: text,
                   updatedAt: timestamp,
                   fromWebhook: true
                 });
               }
 
-              const messageRef = doc(db, `tickets/${ticketId}/messages`, `${eventId}_${index++}`);
-              await setDoc(messageRef, {
+              await axios.post('/api/messages', {
+                id: `${eventId}_${index++}`,
+                ticketId: ticketId,
                 sender: "customer",
                 text: text,
                 timestamp: timestamp,
                 fromWebhook: true
-              }, { merge: true });
+              });
             }
           }
         }
@@ -218,12 +233,18 @@ export default function WebhookProcessor() {
               if (senderId === entry.id) continue;
 
               const ticketId = `instagram_${senderId}`;
-              const ticketRef = doc(db, "tickets", ticketId);
 
-              const docSnap = await getDoc(ticketRef);
+              let ticketExists = false;
+              try {
+                const ticketRes = await axios.get(`/api/tickets/${ticketId}`);
+                ticketExists = ticketRes.status === 200;
+              } catch {
+                ticketExists = false;
+              }
 
-              if (!docSnap.exists()) {
-                const newTicket = {
+              if (!ticketExists) {
+                await axios.post('/api/tickets', {
+                  id: ticketId,
                   customerName: senderName,
                   customerPhone: senderId,
                   channel: "instagram",
@@ -233,23 +254,23 @@ export default function WebhookProcessor() {
                   tags: ["Instagram Comentário"],
                   inbox: inboxId,
                   fromWebhook: true
-                };
-                await setDoc(ticketRef, newTicket);
+                });
               } else {
-                await updateDoc(ticketRef, {
+                await axios.put(`/api/tickets/${ticketId}`, {
                   lastMessage: `[Comentário] ${text}`,
                   updatedAt: timestamp,
                   fromWebhook: true
                 });
               }
 
-              const messageRef = doc(db, `tickets/${ticketId}/messages`, `${eventId}_${index++}`);
-              await setDoc(messageRef, {
+              await axios.post('/api/messages', {
+                id: `${eventId}_${index++}`,
+                ticketId: ticketId,
                 sender: "customer",
                 text: `[Comentário] ${text}`,
                 timestamp: timestamp,
                 fromWebhook: true
-              }, { merge: true });
+              });
             }
           }
         }
