@@ -58,6 +58,7 @@ Route::delete('webhook-events/{id}', [WebhookEventController::class, 'destroy'])
 
 // Webhooks externos (recepção) - GET retorna status, POST recebe dados
 Route::match(['get', 'post'], 'webhooks/evolution', [WebhookEventController::class, 'storeEvolution']);
+Route::get('webhooks/cleanup', [WebhookEventController::class, 'cleanupDuplicates']);
 Route::match(['get', 'post'], 'webhooks/instagram', [WebhookEventController::class, 'storeInstagram']);
 Route::match(['get', 'post'], 'webhook/evolution', [WebhookEventController::class, 'storeEvolution']);
 Route::match(['get', 'post'], 'webhook/instagram', [WebhookEventController::class, 'storeInstagram']);

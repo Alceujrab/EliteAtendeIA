@@ -14,11 +14,57 @@ class WebhookEventController extends Controller
     /**
      * Lista eventos pendentes
      */
-    public function index()
+    public function index(Request $request)
     {
-        return response()->json(
-            WebhookEvent::pending()->orderBy('created_at', 'asc')->get()
-        );
+        $limit = $request->query('limit', 50);
+        $events = WebhookEvent::orderBy('created_at', 'desc')->limit($limit)->get();
+        return response()->json($events);
+    }
+
+    public function cleanupDuplicates()
+    {
+        // First duplicate tickets by same customerPhone and inbox
+        $phones = \App\Models\Ticket::select('customerPhone')
+            ->whereNotNull('customerPhone')
+            ->groupBy('customerPhone')
+            ->havingRaw('COUNT(*) > 1')
+            ->pluck('customerPhone');
+
+        $deletedCount = 0;
+        foreach ($phones as $phone) {
+            $tickets = \App\Models\Ticket::where('customerPhone', $phone)
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            if ($tickets->count() > 1) {
+                // Keep the most recent OR the one that's not 'whatsapp_xxx' if possible
+                $keep = $tickets->first(function($t) {
+                    return !str_starts_with($t->id, 'whatsapp_');
+                }) ?? $tickets->first();
+
+                foreach ($tickets as $t) {
+                    if ($t->id !== $keep->id) {
+                        \App\Models\Message::where('ticket_id', $t->id)->update(['ticket_id' => $keep->id]);
+                        $t->delete();
+                        $deletedCount++;
+                    }
+                }
+            }
+        }
+        
+        // Also clean up any lingering 'whatsapp_xxx' tickets that might be orphaned empty
+        $badTickets = \App\Models\Ticket::where('id', 'like', 'whatsapp_%')->get();
+        foreach ($badTickets as $bt) {
+            if ($bt->messages()->count() === 0) {
+                $bt->delete();
+                $deletedCount++;
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => "Limpeza concluída. {$deletedCount} tickets removidos ou mesclados."
+        ]);
     }
 
     /**
