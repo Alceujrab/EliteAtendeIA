@@ -132,18 +132,19 @@ class WebhookEventController extends Controller
             return;
         }
 
-        // Ignorar mensagens de grupos (contém @g.us ou tem field participant)
-        if (str_contains($remoteJid, '@g.us') || isset($data['participant'])) {
-            $event->update(['status' => 'ignored', 'error_message' => 'Mensagem de grupo ignorada']);
-            return;
-        }
-
+        $isGroup = str_contains($remoteJid, '@g.us');
         $phone = $this->extractPhone($remoteJid);
         $pushName = $data['pushName'] ?? '';
-        // Filtrar nomes inválidos (. ou vazio)
-        $contactName = ($pushName && $pushName !== '.' && strlen(trim($pushName)) > 1)
-            ? $pushName
-            : $this->formatPhone($phone);
+        
+        // Se for grupo, o nome do ticket será "Grupo" + final do número
+        if ($isGroup) {
+            $contactName = "Grupo WhatsApp (" . substr($phone, -4) . ")";
+        } else {
+            // Filtrar nomes inválidos (. ou vazio)
+            $contactName = ($pushName && $pushName !== '.' && strlen(trim($pushName)) > 1)
+                ? $pushName
+                : $this->formatPhone($phone);
+        }
         $instanceName = $payload['instance'] ?? '';
 
         // Extrair conteúdo da mensagem
