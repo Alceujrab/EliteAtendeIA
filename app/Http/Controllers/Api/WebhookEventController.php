@@ -125,16 +125,24 @@ class WebhookEventController extends Controller
             }
         }
 
-        // Encontrar ou criar ticket para esse contato
-        $ticket = Ticket::where('customerPhone', $phone)
-            ->where('channel', 'whatsapp')
+        // Encontrar ticket existente para esse contato (busca robusta)
+        // Limpar telefone para apenas dígitos
+        $cleanPhone = preg_replace('/[^0-9]/', '', $phone);
+        
+        $ticket = Ticket::where('channel', 'whatsapp')
             ->whereIn('status', ['open', 'pending'])
+            ->where(function ($query) use ($phone, $cleanPhone) {
+                $query->where('customerPhone', $phone)
+                      ->orWhere('customerPhone', $cleanPhone)
+                      ->orWhere('customerPhone', 'LIKE', '%' . substr($cleanPhone, -10) . '%');
+            })
+            ->orderBy('updated_at', 'desc')
             ->first();
 
         if (!$ticket) {
             $ticket = Ticket::create([
                 'customerName' => $contactName,
-                'customerPhone' => $phone,
+                'customerPhone' => $cleanPhone, // Sempre salvar apenas dígitos
                 'customerAvatar' => $profilePicUrl,
                 'channel' => 'whatsapp',
                 'status' => 'open',
@@ -146,9 +154,16 @@ class WebhookEventController extends Controller
         } else {
             $updateData = [
                 'lastMessage' => $messageText,
-                'customerName' => $contactName,
                 'updated_at' => now(),
             ];
+            // Atualizar nome se o novo for melhor
+            if ($contactName && $contactName !== $phone && $contactName !== $cleanPhone) {
+                $updateData['customerName'] = $contactName;
+            }
+            // Normalizar phone para apenas dígitos
+            if ($ticket->customerPhone !== $cleanPhone) {
+                $updateData['customerPhone'] = $cleanPhone;
+            }
             // Atualizar foto se disponível e ticket não tem
             if ($profilePicUrl && !$ticket->customerAvatar) {
                 $updateData['customerAvatar'] = $profilePicUrl;
