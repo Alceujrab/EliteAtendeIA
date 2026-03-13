@@ -138,8 +138,8 @@ export default function Inbox({ setActiveTab }: { setActiveTab?: (tab: string) =
 
   const accessibleInboxes = (inboxes || []).filter(inbox => 
     appUser?.role === 'admin' || 
-    inbox.accessType === 'all' || 
-    (inbox.accessType === 'specific' && inbox.allowedUsers?.includes(appUser?.id))
+    (inbox.access_type || inbox.accessType) === 'all' || 
+    ((inbox.access_type || inbox.accessType) === 'specific' && (inbox.allowed_users || inbox.allowedUsers || []).includes(appUser?.id))
   ).map(inbox => inbox.id);
 
   const filteredTickets = (tickets || []).filter(t => {
@@ -518,7 +518,7 @@ export default function Inbox({ setActiveTab }: { setActiveTab?: (tab: string) =
                     <ChannelIcon channel={ticket.channel} />
                     <span className="font-medium text-sm text-slate-900 truncate max-w-[120px]">{ticket.customerName}</span>
                   </div>
-                  <span className="text-xs text-slate-500">{formatDate(ticket.updatedAt)}</span>
+                  <span className="text-xs text-slate-500">{formatDate(ticket.updatedAt || ticket.updated_at || '')}</span>
                 </div>
                 {ticket.subject && (
                   <p className="text-xs font-medium text-slate-700 mb-1 truncate">{ticket.subject}</p>
@@ -675,7 +675,7 @@ export default function Inbox({ setActiveTab }: { setActiveTab?: (tab: string) =
                     )}
                     <span className="text-[11px] text-slate-400 mt-1 px-1 flex items-center gap-1">
                       {isBot && <Bot className="w-3 h-3" />}
-                      {formatDate(msg.timestamp)}
+                      {formatDate(msg.timestamp || msg.created_at || '')}
                     </span>
                   </div>
                 );

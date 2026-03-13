@@ -24,6 +24,7 @@ export interface Message {
   sender: 'agent' | 'customer' | 'bot';
   text: string;
   timestamp: string;
+  created_at?: string;
   isVehicle?: boolean;
   vehicleData?: Vehicle;
   fromWebhook?: boolean;
@@ -59,6 +60,7 @@ export interface Ticket {
   subject?: string;
   lastMessage: string;
   updatedAt: string;
+  updated_at?: string;
   messages?: Message[];
   tags: string[];
   inbox?: string;

@@ -7,6 +7,7 @@ use App\Models\WebhookEvent;
 use App\Models\Ticket;
 use App\Models\Message;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 
 class WebhookEventController extends Controller
 {
@@ -92,6 +93,25 @@ class WebhookEventController extends Controller
             return;
         }
 
+        // Buscar foto de perfil via Evolution API (se disponível)
+        $profilePicUrl = null;
+        $serverUrl = $payload['server_url'] ?? null;
+        $apikey = $payload['apikey'] ?? null;
+        if ($serverUrl && $apikey && $instanceName) {
+            try {
+                $picResponse = Http::timeout(5)
+                    ->withHeaders(['apikey' => $apikey])
+                    ->post(rtrim($serverUrl, '/') . "/chat/fetchProfilePictureUrl/{$instanceName}", [
+                        'number' => $remoteJid,
+                    ]);
+                if ($picResponse->successful()) {
+                    $profilePicUrl = $picResponse->json('profilePictureUrl') ?? $picResponse->json('profilePicUrl') ?? null;
+                }
+            } catch (\Exception $e) {
+                // Silently ignore - photo is optional
+            }
+        }
+
         // Encontrar ou criar ticket para esse contato
         $ticket = Ticket::where('customerPhone', $phone)
             ->where('channel', 'whatsapp')
@@ -102,6 +122,7 @@ class WebhookEventController extends Controller
             $ticket = Ticket::create([
                 'customerName' => $contactName,
                 'customerPhone' => $phone,
+                'customerAvatar' => $profilePicUrl,
                 'channel' => 'whatsapp',
                 'status' => 'open',
                 'subject' => "WhatsApp - {$contactName}",
@@ -110,11 +131,16 @@ class WebhookEventController extends Controller
                 'fromWebhook' => true,
             ]);
         } else {
-            $ticket->update([
+            $updateData = [
                 'lastMessage' => $messageText,
                 'customerName' => $contactName,
                 'updated_at' => now(),
-            ]);
+            ];
+            // Atualizar foto se disponível e ticket não tem
+            if ($profilePicUrl && !$ticket->customerAvatar) {
+                $updateData['customerAvatar'] = $profilePicUrl;
+            }
+            $ticket->update($updateData);
         }
 
         // Criar mensagem no ticket

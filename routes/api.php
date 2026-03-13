@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\VehicleController;
 use App\Http\Controllers\Api\WebhookEventController;
 use App\Http\Controllers\Api\ChatbotController;
+use App\Http\Controllers\Api\SendMessageController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -43,6 +44,13 @@ Route::get('settings/{key}', [SettingController::class, 'show']);
 Route::put('settings/{key}', [SettingController::class, 'update']);
 
 // ========================
+// Enviar Mensagens (Evolution + Instagram)
+// ========================
+Route::post('send/whatsapp', [SendMessageController::class, 'whatsapp']);
+Route::post('send/whatsapp/media', [SendMessageController::class, 'whatsappMedia']);
+Route::post('send/instagram', [SendMessageController::class, 'instagram']);
+
+// ========================
 // Webhook Events
 // ========================
 Route::get('webhook-events', [WebhookEventController::class, 'index']);
@@ -59,3 +67,4 @@ Route::match(['get', 'post'], 'webhook/instagram', [WebhookEventController::clas
 // ========================
 Route::post('chatbot/message', [ChatbotController::class, 'processMessage']);
 Route::get('chatbot/status', [ChatbotController::class, 'status']);
+
