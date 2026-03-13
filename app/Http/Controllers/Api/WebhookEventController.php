@@ -16,9 +16,9 @@ class WebhookEventController extends Controller
      */
     public function index(Request $request)
     {
-        $limit = $request->query('limit', 50);
-        $events = WebhookEvent::orderBy('created_at', 'desc')->limit($limit)->get();
-        return response()->json($events);
+        // Forçar retorno vazio para matar o polling de abas antigas abertas
+        // que esgotam as conexões MySQL (max_user_connections)
+        return response()->json([]);
     }
 
     public function cleanupDuplicates()
