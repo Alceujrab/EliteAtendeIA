@@ -67,7 +67,7 @@
     ]
   },
   "node_modules/canvg/lib/index.es.js": {
-    "file": "assets/index.es-oSUHvJod.js",
+    "file": "assets/index.es-CuEfJc3J.js",
     "name": "index.es",
     "src": "node_modules/canvg/lib/index.es.js",
     "isDynamicEntry": true,
@@ -178,7 +178,7 @@
     ]
   },
   "resources/js/Pages/CrmApp.tsx": {
-    "file": "assets/CrmApp-ClRmQHVA.js",
+    "file": "assets/CrmApp-DZENa1mf.js",
     "name": "CrmApp",
     "src": "resources/js/Pages/CrmApp.tsx",
     "isEntry": true,
@@ -280,7 +280,7 @@
     ]
   },
   "resources/js/app.tsx": {
-    "file": "assets/app-DRqHaDnQ.js",
+    "file": "assets/app-Dt64xnZs.js",
     "name": "app",
     "src": "resources/js/app.tsx",
     "isEntry": true,
@@ -304,7 +304,7 @@
       "resources/js/Pages/Welcome.tsx"
     ],
     "css": [
-      "assets/app-CgeRTUeK.css"
+      "assets/app-BSdSV4F-.css"
     ]
   }
 }

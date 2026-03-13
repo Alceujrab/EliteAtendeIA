@@ -144,8 +144,16 @@ export default function Inbox({ setActiveTab }: { setActiveTab?: (tab: string) =
 
   const filteredTickets = (tickets || []).filter(t => {
     const matchesSearch = t.customerName?.toLowerCase().includes(searchQuery?.toLowerCase() || '') ||
-                          t.lastMessage?.toLowerCase().includes(searchQuery?.toLowerCase() || '');
-    const matchesInbox = selectedInbox === 'all' ? accessibleInboxes.includes(t.inbox || '') || accessibleInboxes.length === 0 : t.inbox === selectedInbox;
+                          t.lastMessage?.toLowerCase().includes(searchQuery?.toLowerCase() || '') ||
+                          t.customerPhone?.includes(searchQuery || '');
+    // Match inbox by ID or by name (webhook saves instance name, not ID)
+    const ticketInbox = t.inbox || '';
+    const matchesInbox = selectedInbox === 'all' || 
+      ticketInbox === selectedInbox || 
+      ticketInbox === String(selectedInbox) ||
+      inboxes.some(i => (i.id === selectedInbox || String(i.id) === selectedInbox) && 
+        (i.name?.toLowerCase() === ticketInbox.toLowerCase() || 
+         i.settings?.evolutionInstance?.toLowerCase() === ticketInbox.toLowerCase()));
     const matchesChannel = channelFilter === 'all' || t.channel === channelFilter;
     const matchesStatus = statusFilter === 'all' || t.status === statusFilter;
     const matchesTag = tagFilter === 'all' || (t.tags && t.tags.includes(tagFilter));
@@ -504,33 +512,48 @@ export default function Inbox({ setActiveTab }: { setActiveTab?: (tab: string) =
             <div className="p-6 text-center text-slate-500 text-sm">
               Nenhuma conversa encontrada.
             </div>
-          ) : (
-            filteredTickets.map(ticket => (
-              <div 
-                key={ticket.id}
-                onClick={() => setSelectedTicketId(ticket.id)}
-                className={`p-4 border-b border-slate-100 cursor-pointer transition-colors ${
-                  selectedTicketId === ticket.id ? 'bg-blue-50 border-l-4 border-l-blue-500' : 'bg-white hover:bg-slate-50 border-l-4 border-l-transparent'
-                }`}
-              >
-                <div className="flex justify-between items-start mb-1">
-                  <div className="flex items-center gap-2">
-                    <ChannelIcon channel={ticket.channel} />
-                    <span className="font-medium text-sm text-slate-900 truncate max-w-[120px]">{ticket.customerName}</span>
+          ) :               filteredTickets.map(ticket => (
+                <div 
+                  key={ticket.id} 
+                  onClick={() => setSelectedTicketId(ticket.id)}
+                  className={`flex items-center gap-3 p-3 cursor-pointer transition-colors border-b border-slate-100 hover:bg-blue-50 ${
+                    selectedTicketId === ticket.id ? 'bg-blue-50 border-l-2 border-l-blue-600' : ''
+                  }`}
+                >
+                  {/* Avatar */}
+                  <div className="relative shrink-0">
+                    <div className="w-11 h-11 rounded-full bg-slate-200 overflow-hidden">
+                      {ticket.customerAvatar ? (
+                        <img src={ticket.customerAvatar} alt={ticket.customerName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-blue-100 text-blue-600 text-sm font-bold">
+                          {(ticket.customerName || '?').charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                    <div className="absolute -bottom-0.5 -right-0.5">
+                      <ChannelIcon channel={ticket.channel} className="w-3.5 h-3.5" />
+                    </div>
                   </div>
-                  <span className="text-xs text-slate-500">{formatDate(ticket.updatedAt || ticket.updated_at || '')}</span>
-                </div>
-                {ticket.subject && (
-                  <p className="text-xs font-medium text-slate-700 mb-1 truncate">{ticket.subject}</p>
-                )}
-                <p className="text-xs text-slate-500 line-clamp-2">{ticket.lastMessage}</p>
-                <div className="mt-2 flex items-center justify-between">
-                  <StatusBadge status={ticket.status} />
-                  {ticket.status === 'open' && <div className="w-2 h-2 rounded-full bg-blue-500"></div>}
-                </div>
-              </div>
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-sm text-slate-900 truncate">{ticket.customerName}</span>
+                      <span className="text-[11px] text-slate-400 shrink-0 ml-2">{formatDate(ticket.updatedAt || ticket.updated_at || '')}</span>
+                    </div>
+                    <p className="text-xs text-slate-500 truncate mt-0.5">
+                      {ticket.lastMessage?.startsWith('📷') || ticket.lastMessage?.startsWith('🎥') || ticket.lastMessage?.startsWith('🎵') 
+                        ? ticket.lastMessage 
+                        : ticket.lastMessage}
+                    </p>
+                  </div>
+                  {/* Unread indicator */}
+                  {ticket.status === 'open' && ticket.fromWebhook && (
+                    <div className="w-2.5 h-2.5 rounded-full bg-blue-500 shrink-0"></div>
+                  )}
+                </div>               
             ))
-          )}
+          }
         </div>
       </div>
 
