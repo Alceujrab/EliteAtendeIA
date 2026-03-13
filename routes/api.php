@@ -59,6 +59,12 @@ Route::delete('webhook-events/{id}', [WebhookEventController::class, 'destroy'])
 // Webhooks externos (recepção) - GET retorna status, POST recebe dados
 Route::match(['get', 'post'], 'webhooks/evolution', [WebhookEventController::class, 'storeEvolution']);
 Route::get('webhooks/cleanup', [WebhookEventController::class, 'cleanupDuplicates']);
+Route::get('sys/logs', function() {
+    $logPath = storage_path('logs/laravel.log');
+    if (!file_exists($logPath)) return 'No log file';
+    $logs = implode("", array_slice(file($logPath), -200));
+    return response($logs)->header('Content-Type', 'text/plain');
+});
 Route::match(['get', 'post'], 'webhooks/instagram', [WebhookEventController::class, 'storeInstagram']);
 Route::match(['get', 'post'], 'webhook/evolution', [WebhookEventController::class, 'storeEvolution']);
 Route::match(['get', 'post'], 'webhook/instagram', [WebhookEventController::class, 'storeInstagram']);
