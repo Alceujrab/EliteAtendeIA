@@ -126,8 +126,14 @@ class WebhookEventController extends Controller
         // Extrair dados do remetente
         $remoteJid = $key['remoteJid'] ?? '';
 
-        // Ignorar mensagens de grupos
-        if (str_contains($remoteJid, '@g.us')) {
+        // Ignorar Status (Story) e Broadcast
+        if ($remoteJid === 'status@broadcast' || str_contains($remoteJid, '@broadcast')) {
+            $event->update(['status' => 'ignored', 'error_message' => 'Status ou broadcast ignorado']);
+            return;
+        }
+
+        // Ignorar mensagens de grupos (contém @g.us ou tem field participant)
+        if (str_contains($remoteJid, '@g.us') || isset($data['participant'])) {
             $event->update(['status' => 'ignored', 'error_message' => 'Mensagem de grupo ignorada']);
             return;
         }
