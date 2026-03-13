@@ -40,7 +40,7 @@ class TicketController extends Controller
             'channel' => 'required|string',
             'subject' => 'nullable|string',
             'lastMessage' => 'required|string',
-            'inbox' => 'nullable|string',
+            'inbox' => 'nullable',
         ]);
 
         $ticket = Ticket::create([
@@ -79,7 +79,17 @@ class TicketController extends Controller
             'assignedTo' => 'sometimes|string|nullable',
             'lastMessage' => 'sometimes|string',
             'tags' => 'sometimes|array',
+            'inbox' => 'sometimes|nullable',
+            'customerId' => 'sometimes|string|nullable',
+            'customerName' => 'sometimes|string|nullable',
+            'customerEmail' => 'sometimes|string|nullable',
+            'customerPhone' => 'sometimes|string|nullable',
         ]);
+
+        // Cast inbox to string if it's an integer
+        if (isset($validated['inbox'])) {
+            $validated['inbox'] = (string) $validated['inbox'];
+        }
 
         $ticket->update($validated);
 

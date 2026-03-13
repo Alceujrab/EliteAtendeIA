@@ -79,14 +79,27 @@ class WebhookEventController extends Controller
 
         // Extrair dados do remetente
         $remoteJid = $key['remoteJid'] ?? '';
+
+        // Ignorar mensagens de grupos
+        if (str_contains($remoteJid, '@g.us')) {
+            $event->update(['status' => 'ignored', 'error_message' => 'Mensagem de grupo ignorada']);
+            return;
+        }
+
         $phone = $this->extractPhone($remoteJid);
-        $contactName = $data['pushName'] ?? $phone;
+        $pushName = $data['pushName'] ?? '';
+        // Filtrar nomes inválidos (. ou vazio)
+        $contactName = ($pushName && $pushName !== '.' && strlen(trim($pushName)) > 1)
+            ? $pushName
+            : $this->formatPhone($phone);
         $instanceName = $payload['instance'] ?? '';
 
         // Extrair conteúdo da mensagem
         $messageText = $this->extractMessageText($data);
         $mediaUrl = $this->extractMediaUrl($data);
-        $mediaType = $data['messageType'] ?? null;
+        $rawMediaType = $data['messageType'] ?? null;
+        // Normalizar mediaType: imageMessage → image, audioMessage → audio, etc.
+        $mediaType = $this->normalizeMediaType($rawMediaType);
 
         if (!$phone || !$messageText) {
             $event->update(['status' => 'ignored', 'error_message' => 'Sem telefone ou texto']);
@@ -150,7 +163,7 @@ class WebhookEventController extends Controller
             'text' => $messageText,
             'fromWebhook' => true,
             'mediaUrl' => $mediaUrl,
-            'mediaType' => ($mediaType !== 'conversation' && $mediaType !== 'extendedTextMessage') ? $mediaType : null,
+            'mediaType' => $mediaType,
         ]);
 
         // Marcar evento como processado
@@ -164,6 +177,51 @@ class WebhookEventController extends Controller
     {
         // 556699616110@s.whatsapp.net -> 556699616110
         return preg_replace('/@.*$/', '', $jid);
+    }
+
+    /**
+     * Formata número de telefone para exibição
+     */
+    private function formatPhone(string $phone): string
+    {
+        if (strlen($phone) >= 12) {
+            // Ex: 556699616110 -> +55 (66) 99616-1110
+            return '+' . substr($phone, 0, 2) . ' (' . substr($phone, 2, 2) . ') ' . substr($phone, 4, 5) . '-' . substr($phone, 9);
+        }
+        return $phone;
+    }
+
+    /**
+     * Normaliza o mediaType da Evolution API para o formato do frontend
+     */
+    private function normalizeMediaType(?string $type): ?string
+    {
+        if (!$type) return null;
+
+        $map = [
+            'conversation' => null,
+            'extendedTextMessage' => null,
+            'imageMessage' => 'image',
+            'videoMessage' => 'video',
+            'audioMessage' => 'audio',
+            'documentMessage' => 'document',
+            'documentWithCaptionMessage' => 'document',
+            'stickerMessage' => 'image',
+            'locationMessage' => null,
+            'contactMessage' => null,
+            'contactsArrayMessage' => null,
+        ];
+
+        if (array_key_exists($type, $map)) {
+            return $map[$type];
+        }
+
+        // Se já está normalizado (image, video, audio, document)
+        if (in_array($type, ['image', 'video', 'audio', 'document'])) {
+            return $type;
+        }
+
+        return null;
     }
 
     /**
