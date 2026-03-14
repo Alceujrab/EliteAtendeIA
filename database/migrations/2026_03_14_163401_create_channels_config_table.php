@@ -12,9 +12,13 @@ return new class extends Migration
         if (Schema::hasTable('channels')) {
             if (!Schema::hasColumn('channels', 'settings')) {
                 Schema::table('channels', function (Blueprint $table) {
-                    $table->json('settings')->nullable()->after('name');
-                    $table->string('type')->default('whatsapp')->after('name');
-                    $table->string('status')->default('disconnected')->after('settings');
+                    $table->json('settings')->nullable();
+                    if (!Schema::hasColumn('channels', 'type')) {
+                        $table->string('type')->default('whatsapp');
+                    }
+                    if (!Schema::hasColumn('channels', 'status')) {
+                        $table->string('status')->default('disconnected');
+                    }
                 });
             }
         } else {
