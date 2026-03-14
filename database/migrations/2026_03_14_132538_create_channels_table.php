@@ -6,22 +6,23 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        if (!Schema::hasTable('channels')) { Schema::create('channels', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
-        }); }
+        if (!Schema::hasTable('channels')) {
+            Schema::create('channels', function (Blueprint $table) {
+                $table->id();
+                $table->string('name');
+                $table->string('type')->default('whatsapp');
+                $table->string('api_key')->nullable();
+                $table->string('instance_name')->nullable();
+                $table->boolean('is_active')->default(true);
+                $table->timestamps();
+            });
+        }
+    }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('channels');
     }
 };
-
