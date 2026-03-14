@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('chatbot_nodes', function (Blueprint $table) {
+        if (!Schema::hasTable('chatbot_nodes')) { Schema::create('chatbot_nodes', function (Blueprint $table) {
             $table->id();
             $table->foreignId('chatbot_flow_id')->constrained()->cascadeOnDelete();
             $table->string('node_id'); // ID from React Flow
@@ -20,8 +20,7 @@ return new class extends Migration
             $table->json('position')->nullable(); // X, Y coordinates
             $table->json('edges')->nullable(); // Connections to other nodes
             $table->timestamps();
-        });
-    }
+        }); }
 
     /**
      * Reverse the migrations.
@@ -31,3 +30,4 @@ return new class extends Migration
         Schema::dropIfExists('chatbot_nodes');
     }
 };
+

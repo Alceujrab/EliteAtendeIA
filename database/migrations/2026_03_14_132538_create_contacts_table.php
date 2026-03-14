@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('contacts', function (Blueprint $table) {
+        if (!Schema::hasTable('contacts')) { Schema::create('contacts', function (Blueprint $table) {
             $table->id();
             $table->string('name');
             $table->string('phone')->unique()->nullable();
@@ -20,8 +20,7 @@ return new class extends Migration
             $table->text('notes')->nullable();
             $table->string('status')->default('active'); // active, lead, client, lost
             $table->timestamps();
-        });
-    }
+        }); }
 
     /**
      * Reverse the migrations.
@@ -31,3 +30,4 @@ return new class extends Migration
         Schema::dropIfExists('contacts');
     }
 };
+

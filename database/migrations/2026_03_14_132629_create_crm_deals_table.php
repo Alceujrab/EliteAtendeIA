@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('crm_deals', function (Blueprint $table) {
+        if (!Schema::hasTable('crm_deals')) { Schema::create('crm_deals', function (Blueprint $table) {
             $table->id();
             $table->foreignId('crm_stage_id')->constrained()->cascadeOnDelete();
             // We'll optionally link to a contact later
@@ -23,8 +23,7 @@ return new class extends Migration
             $table->decimal('value', 10, 2)->default(0);
             
             $table->timestamps();
-        });
-    }
+        }); }
 
     /**
      * Reverse the migrations.
@@ -34,3 +33,4 @@ return new class extends Migration
         Schema::dropIfExists('crm_deals');
     }
 };
+

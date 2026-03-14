@@ -11,15 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('crm_stages', function (Blueprint $table) {
+        if (!Schema::hasTable('crm_stages')) { Schema::create('crm_stages', function (Blueprint $table) {
             $table->id();
             $table->foreignId('crm_funnel_id')->constrained()->cascadeOnDelete();
             $table->string('name');
             $table->integer('order_index')->default(0);
             $table->string('color')->nullable();
             $table->timestamps();
-        });
-    }
+        }); }
 
     /**
      * Reverse the migrations.
@@ -29,3 +28,4 @@ return new class extends Migration
         Schema::dropIfExists('crm_stages');
     }
 };
+

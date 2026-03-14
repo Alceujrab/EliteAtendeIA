@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('conversations', function (Blueprint $table) {
+        if (!Schema::hasTable('conversations')) { Schema::create('conversations', function (Blueprint $table) {
             $table->id();
             $table->foreignId('contact_id')->constrained()->cascadeOnDelete();
             // A channel is expected to be Whatsapp/Instagram etc
@@ -21,8 +21,7 @@ return new class extends Migration
             $table->timestamp('last_message_at')->nullable();
             
             $table->timestamps();
-        });
-    }
+        }); }
 
     /**
      * Reverse the migrations.
@@ -32,3 +31,4 @@ return new class extends Migration
         Schema::dropIfExists('conversations');
     }
 };
+
