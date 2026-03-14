@@ -3,8 +3,8 @@ import { Search, Filter, MoreHorizontal, MessageSquarePlus } from 'lucide-react'
 
 interface ConversationListProps {
     conversations: any[];
-    activeId: string | null;
-    onSelect: (id: string) => void;
+    activeId: number | null;
+    onSelect: (id: number) => void;
 }
 
 export default function ConversationList({ conversations, activeId, onSelect }: ConversationListProps) {
@@ -48,13 +48,13 @@ export default function ConversationList({ conversations, activeId, onSelect }: 
             {/* Lista Rolável */}
             <div className="flex-1 overflow-y-auto">
                 {filteredConversations.map((conv) => {
-                    const isActive = conv.id.toString() === activeId;
+                    const isActive = conv.id === activeId;
                     const contactName = conv.contact?.name || 'Desconhecido';
                     
                     return (
                         <div 
                             key={conv.id} 
-                            onClick={() => onSelect(conv.id.toString())}
+                            onClick={() => onSelect(conv.id)}
                             className={`group relative cursor-pointer border-b border-gray-100 p-4 transition-colors dark:border-gray-800 ${
                                 isActive 
                                     ? 'bg-indigo-50 dark:bg-indigo-900/20' 

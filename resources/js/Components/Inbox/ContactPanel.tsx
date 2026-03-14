@@ -1,11 +1,11 @@
 import { Phone, MessageSquare, Tag, ChevronDown, CalendarClock } from 'lucide-react';
 
 interface ContactPanelProps {
-    isOpen: boolean;
+    isOpen?: boolean;
     contact: any;
 }
 
-export default function ContactPanel({ isOpen, contact }: ContactPanelProps) {
+export default function ContactPanel({ isOpen = true, contact }: ContactPanelProps) {
     if (!isOpen || !contact) return null;
 
     const contactName = contact.name || 'Desconhecido';

@@ -17,5 +17,11 @@ class Conversation extends Model
     {
         return $this->belongsTo(User::class, "assigned_to");
     }
+
+    public function messages()
+    {
+        return $this->hasMany(ConversationMessage::class)->orderBy('created_at', 'asc');
+    }
 }
+
 

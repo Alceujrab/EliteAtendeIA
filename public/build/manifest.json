@@ -15,14 +15,14 @@
       "_Dropdown-BGh8ZtLW.js"
     ]
   },
-  "_BarChart-eVSFXFzE.js": {
-    "file": "assets/BarChart-eVSFXFzE.js",
+  "_BarChart-6_VLsFYP.js": {
+    "file": "assets/BarChart-6_VLsFYP.js",
     "name": "BarChart",
     "imports": [
       "_users-D8AhAB0Q.js",
       "_index.esm-BSlhL93h.js",
       "_tiny-invariant-C-Co2vJW.js",
-      "_value-BQtEe0va.js"
+      "_value-DnBqBm56.js"
     ]
   },
   "_Dropdown-BGh8ZtLW.js": {
@@ -72,13 +72,6 @@
       "_index.esm-BSlhL93h.js"
     ]
   },
-  "_clock-xW3S-GpW.js": {
-    "file": "assets/clock-xW3S-GpW.js",
-    "name": "clock",
-    "imports": [
-      "_users-D8AhAB0Q.js"
-    ]
-  },
   "_dialog-D3kVEc9l.js": {
     "file": "assets/dialog-D3kVEc9l.js",
     "name": "dialog",
@@ -113,19 +106,19 @@
       "_users-D8AhAB0Q.js"
     ]
   },
-  "_preload-helper-I4rgV-VL.js": {
-    "file": "assets/preload-helper-I4rgV-VL.js",
-    "name": "preload-helper"
-  },
-  "_save-C_MdcBao.js": {
-    "file": "assets/save-C_MdcBao.js",
-    "name": "save",
+  "_plus-z8JzQASe.js": {
+    "file": "assets/plus-z8JzQASe.js",
+    "name": "plus",
     "imports": [
       "_users-D8AhAB0Q.js"
     ]
   },
-  "_tag-cadkoKiZ.js": {
-    "file": "assets/tag-cadkoKiZ.js",
+  "_preload-helper-I4rgV-VL.js": {
+    "file": "assets/preload-helper-I4rgV-VL.js",
+    "name": "preload-helper"
+  },
+  "_tag-Dp4Dkfoj.js": {
+    "file": "assets/tag-Dp4Dkfoj.js",
     "name": "tag",
     "imports": [
       "_users-D8AhAB0Q.js"
@@ -146,6 +139,13 @@
       "_index.esm-BSlhL93h.js"
     ]
   },
+  "_trash-2-CoVzVGeC.js": {
+    "file": "assets/trash-2-CoVzVGeC.js",
+    "name": "trash-2",
+    "imports": [
+      "_users-D8AhAB0Q.js"
+    ]
+  },
   "_users-D8AhAB0Q.js": {
     "file": "assets/users-D8AhAB0Q.js",
     "name": "users",
@@ -153,10 +153,11 @@
       "_index.esm-BSlhL93h.js"
     ]
   },
-  "_value-BQtEe0va.js": {
-    "file": "assets/value-BQtEe0va.js",
+  "_value-DnBqBm56.js": {
+    "file": "assets/value-DnBqBm56.js",
     "name": "value",
     "imports": [
+      "_users-D8AhAB0Q.js",
       "_index.esm-BSlhL93h.js"
     ]
   },
@@ -174,15 +175,15 @@
       "_users-D8AhAB0Q.js"
     ]
   },
-  "_zap-DmovLd-Z.js": {
-    "file": "assets/zap-DmovLd-Z.js",
+  "_zap-DSeR5ILX.js": {
+    "file": "assets/zap-DSeR5ILX.js",
     "name": "zap",
     "imports": [
       "_users-D8AhAB0Q.js"
     ]
   },
   "node_modules/canvg/lib/index.es.js": {
-    "file": "assets/index.es-BQrqtM0b.js",
+    "file": "assets/index.es-DptdWhlG.js",
     "name": "index.es",
     "src": "node_modules/canvg/lib/index.es.js",
     "isDynamicEntry": true,
@@ -191,16 +192,16 @@
       "resources/js/Pages/CrmApp.tsx",
       "_message-square-Dsf1yzqU.js",
       "_users-D8AhAB0Q.js",
-      "_clock-xW3S-GpW.js",
-      "_BarChart-eVSFXFzE.js",
+      "_BarChart-6_VLsFYP.js",
       "_tiny-invariant-C-Co2vJW.js",
       "_with-selector-DTLuGmlS.js",
-      "_value-BQtEe0va.js",
-      "_zap-DmovLd-Z.js",
+      "_value-DnBqBm56.js",
       "_x-BmRDkola.js",
-      "_tag-cadkoKiZ.js",
-      "_save-C_MdcBao.js",
+      "_tag-Dp4Dkfoj.js",
+      "_trash-2-CoVzVGeC.js",
       "_mail-ltK7cbgA.js",
+      "_zap-DSeR5ILX.js",
+      "_plus-z8JzQASe.js",
       "_preload-helper-I4rgV-VL.js"
     ]
   },
@@ -304,7 +305,7 @@
     ]
   },
   "resources/js/Pages/CRM/Index.tsx": {
-    "file": "assets/Index-B8RgB9wr.js",
+    "file": "assets/Index-p8wBesQw.js",
     "name": "Index",
     "src": "resources/js/Pages/CRM/Index.tsx",
     "isEntry": true,
@@ -313,7 +314,8 @@
       "_index.esm-BSlhL93h.js",
       "_KinboxLayout-BMVHAX0V.js",
       "_tiny-invariant-C-Co2vJW.js",
-      "_tag-cadkoKiZ.js",
+      "_plus-z8JzQASe.js",
+      "_tag-Dp4Dkfoj.js",
       "_mail-ltK7cbgA.js",
       "_x-BmRDkola.js",
       "_users-D8AhAB0Q.js",
@@ -325,7 +327,7 @@
     ]
   },
   "resources/js/Pages/CrmApp.tsx": {
-    "file": "assets/CrmApp-C7egce9i.js",
+    "file": "assets/CrmApp-CyHZLx8s.js",
     "name": "CrmApp",
     "src": "resources/js/Pages/CrmApp.tsx",
     "isEntry": true,
@@ -334,17 +336,17 @@
       "_index.esm-BSlhL93h.js",
       "_message-square-Dsf1yzqU.js",
       "_users-D8AhAB0Q.js",
-      "_clock-xW3S-GpW.js",
-      "_BarChart-eVSFXFzE.js",
-      "_zap-DmovLd-Z.js",
+      "_BarChart-6_VLsFYP.js",
+      "_value-DnBqBm56.js",
       "_x-BmRDkola.js",
-      "_tag-cadkoKiZ.js",
-      "_save-C_MdcBao.js",
+      "_tag-Dp4Dkfoj.js",
+      "_trash-2-CoVzVGeC.js",
       "_mail-ltK7cbgA.js",
+      "_zap-DSeR5ILX.js",
+      "_plus-z8JzQASe.js",
       "_preload-helper-I4rgV-VL.js",
       "_tiny-invariant-C-Co2vJW.js",
-      "_with-selector-DTLuGmlS.js",
-      "_value-BQtEe0va.js"
+      "_with-selector-DTLuGmlS.js"
     ],
     "dynamicImports": [
       "node_modules/html2canvas/dist/html2canvas.esm.js",
@@ -367,7 +369,7 @@
     ]
   },
   "resources/js/Pages/Inbox/Index.tsx": {
-    "file": "assets/Index-B3oyUkQM.js",
+    "file": "assets/Index-CUryWnvM.js",
     "name": "Index",
     "src": "resources/js/Pages/Inbox/Index.tsx",
     "isEntry": true,
@@ -376,10 +378,10 @@
       "_index.esm-BSlhL93h.js",
       "_KinboxLayout-BMVHAX0V.js",
       "_users-D8AhAB0Q.js",
-      "_tag-cadkoKiZ.js",
-      "_zap-DmovLd-Z.js",
+      "_tag-Dp4Dkfoj.js",
+      "_zap-DSeR5ILX.js",
       "_message-square-Dsf1yzqU.js",
-      "_clock-xW3S-GpW.js",
+      "_plus-z8JzQASe.js",
       "_Dropdown-BGh8ZtLW.js",
       "_transition-B5N242Xc.js",
       "_dialog-D3kVEc9l.js",
@@ -452,7 +454,7 @@
     ]
   },
   "resources/js/Pages/Reports/Index.tsx": {
-    "file": "assets/Index-CJZqlojQ.js",
+    "file": "assets/Index-Bymf6UDN.js",
     "name": "Index",
     "src": "resources/js/Pages/Reports/Index.tsx",
     "isEntry": true,
@@ -461,18 +463,17 @@
       "_index.esm-BSlhL93h.js",
       "_KinboxLayout-BMVHAX0V.js",
       "_users-D8AhAB0Q.js",
-      "_BarChart-eVSFXFzE.js",
-      "_clock-xW3S-GpW.js",
+      "_BarChart-6_VLsFYP.js",
+      "_value-DnBqBm56.js",
       "_Dropdown-BGh8ZtLW.js",
       "_transition-B5N242Xc.js",
       "_dialog-D3kVEc9l.js",
       "_with-selector-DTLuGmlS.js",
-      "_tiny-invariant-C-Co2vJW.js",
-      "_value-BQtEe0va.js"
+      "_tiny-invariant-C-Co2vJW.js"
     ]
   },
   "resources/js/Pages/Settings/Index.tsx": {
-    "file": "assets/Index-BCFboqAE.js",
+    "file": "assets/Index-BbpXc9fA.js",
     "name": "Index",
     "src": "resources/js/Pages/Settings/Index.tsx",
     "isEntry": true,
@@ -480,12 +481,13 @@
     "imports": [
       "_index.esm-BSlhL93h.js",
       "_KinboxLayout-BMVHAX0V.js",
-      "_value-BQtEe0va.js",
+      "_value-DnBqBm56.js",
       "_message-square-Dsf1yzqU.js",
       "_users-D8AhAB0Q.js",
-      "_save-C_MdcBao.js",
+      "_trash-2-CoVzVGeC.js",
       "_play-wLs_dqET.js",
       "_x-BmRDkola.js",
+      "_plus-z8JzQASe.js",
       "_Dropdown-BGh8ZtLW.js",
       "_transition-B5N242Xc.js",
       "_dialog-D3kVEc9l.js",
@@ -506,7 +508,7 @@
     ]
   },
   "resources/js/app.tsx": {
-    "file": "assets/app-Db4I_7_1.js",
+    "file": "assets/app-B1IUQE_R.js",
     "name": "app",
     "src": "resources/js/app.tsx",
     "isEntry": true,
@@ -534,7 +536,7 @@
       "resources/js/Pages/Welcome.tsx"
     ],
     "css": [
-      "assets/app-D9sNMv97.css"
+      "assets/app-DS42wcxY.css"
     ]
   }
 }
