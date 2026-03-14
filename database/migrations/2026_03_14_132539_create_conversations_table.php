@@ -11,10 +11,10 @@ return new class extends Migration
         if (!Schema::hasTable('conversations')) {
             Schema::create('conversations', function (Blueprint $table) {
                 $table->id();
-                $table->foreignId('contact_id')->constrained()->cascadeOnDelete();
+                $table->unsignedBigInteger('contact_id')->default(0);
                 $table->string('channel')->default('whatsapp');
                 $table->string('status')->default('open');
-                $table->foreignId('assigned_to')->nullable()->constrained('users')->nullOnDelete();
+                $table->unsignedBigInteger('assigned_to')->nullable();
                 $table->timestamp('last_message_at')->nullable();
                 $table->timestamps();
             });

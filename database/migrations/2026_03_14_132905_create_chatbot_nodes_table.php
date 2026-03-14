@@ -11,7 +11,7 @@ return new class extends Migration
         if (!Schema::hasTable('chatbot_nodes')) {
             Schema::create('chatbot_nodes', function (Blueprint $table) {
                 $table->id();
-                $table->foreignId('chatbot_flow_id')->constrained()->cascadeOnDelete();
+                $table->unsignedBigInteger('chatbot_flow_id')->default(0);
                 $table->string('node_id');
                 $table->string('type');
                 $table->json('data')->nullable();

@@ -11,7 +11,7 @@ return new class extends Migration
         if (!Schema::hasTable('crm_stages')) {
             Schema::create('crm_stages', function (Blueprint $table) {
                 $table->id();
-                $table->foreignId('crm_funnel_id')->constrained()->cascadeOnDelete();
+                $table->unsignedBigInteger('crm_funnel_id')->default(0);
                 $table->string('name');
                 $table->integer('order_index')->default(0);
                 $table->string('color')->nullable();
