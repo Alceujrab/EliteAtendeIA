@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { MoreHorizontal, Plus, Car, Tag } from 'lucide-react';
+import { MoreHorizontal, Plus, Car, Tag, X, Phone, Mail } from 'lucide-react';
 import { router } from '@inertiajs/react';
 
 interface Deal {
@@ -19,6 +19,7 @@ interface ColumnData {
 
 export default function KanbanBoard({ initialStages }: { initialStages: any[] }) {
     const [columns, setColumns] = useState<ColumnData[]>([]);
+    const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
 
     useEffect(() => {
         // Transform backend data into the format needed by the kanban board
@@ -91,7 +92,7 @@ export default function KanbanBoard({ initialStages }: { initialStages: any[] })
     }
 
     return (
-        <div className="flex h-full w-full gap-4 overflow-x-auto p-2 pb-6">
+        <div className="flex h-full w-full gap-4 overflow-x-auto p-2 pb-6 relative">
             <DragDropContext onDragEnd={onDragEnd}>
                 {columns.map(column => (
                     <div key={column.id} className="flex h-full w-80 shrink-0 flex-col rounded-lg bg-gray-50 dark:bg-gray-800/50">
@@ -115,7 +116,7 @@ export default function KanbanBoard({ initialStages }: { initialStages: any[] })
                                 <div
                                     ref={provided.innerRef}
                                     {...provided.droppableProps}
-                                    className={`flex-1 overflow-y-auto px-2 pb-2 transition-colors ${
+                                    className={`flex-1 overflow-y-auto px-2 pb-2 min-h-[120px] transition-colors ${
                                         snapshot.isDraggingOver ? 'bg-indigo-50/50 dark:bg-indigo-900/10' : ''
                                     }`}
                                 >
@@ -126,7 +127,8 @@ export default function KanbanBoard({ initialStages }: { initialStages: any[] })
                                                     ref={provided.innerRef}
                                                     {...provided.draggableProps}
                                                     {...provided.dragHandleProps}
-                                                    className={`mb-3 rounded-lg border border-gray-200 bg-white p-3 shadow-sm dark:border-gray-700 dark:bg-gray-900 transition-shadow ${
+                                                    onClick={() => setSelectedDeal(deal)}
+                                                    className={`mb-3 rounded-lg border border-gray-200 bg-white p-3 shadow-sm dark:border-gray-700 dark:bg-gray-900 cursor-pointer transition-shadow ${
                                                         snapshot.isDragging ? 'shadow-lg ring-1 ring-indigo-500' : 'hover:border-indigo-300 dark:hover:border-indigo-500'
                                                     }`}
                                                 >
@@ -166,6 +168,51 @@ export default function KanbanBoard({ initialStages }: { initialStages: any[] })
                     </div>
                 ))}
             </DragDropContext>
+
+            {/* Deal Details Panel */}
+            {selectedDeal && (
+                <div className="fixed inset-0 z-50 flex justify-end" onClick={() => setSelectedDeal(null)}>
+                    <div className="absolute inset-0 bg-black/30" />
+                    <div
+                        className="relative w-96 h-full bg-white dark:bg-gray-900 shadow-2xl border-l border-gray-200 dark:border-gray-700 overflow-y-auto animate-slide-left"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+                            <h2 className="text-lg font-bold text-gray-900 dark:text-white">Detalhes da Negociação</h2>
+                            <button onClick={() => setSelectedDeal(null)} title="Fechar" className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800">
+                                <X className="h-5 w-5 text-gray-500" />
+                            </button>
+                        </div>
+                        <div className="p-5 space-y-5">
+                            <div>
+                                <h3 className="text-xl font-bold text-gray-900 dark:text-white">{selectedDeal.title}</h3>
+                                <div className="text-2xl font-bold text-indigo-600 mt-1">{formatCurrency(selectedDeal.value)}</div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+                                    <span className="text-xs text-gray-500 block">Veículo</span>
+                                    <span className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-1 mt-1">
+                                        <Car className="h-4 w-4 text-indigo-500" />
+                                        {selectedDeal.vehicle}
+                                    </span>
+                                </div>
+                                <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+                                    <span className="text-xs text-gray-500 block">Contato</span>
+                                    <span className="text-sm font-medium text-gray-900 dark:text-white mt-1">{selectedDeal.contact}</span>
+                                </div>
+                            </div>
+                            <div className="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-3">
+                                <button className="w-full flex items-center justify-center gap-2 bg-emerald-600 text-white py-2.5 px-4 rounded-lg text-sm font-semibold hover:bg-emerald-700 transition-colors">
+                                    <Phone className="h-4 w-4" /> Ligar para Contato
+                                </button>
+                                <button className="w-full flex items-center justify-center gap-2 bg-indigo-600 text-white py-2.5 px-4 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors">
+                                    <Mail className="h-4 w-4" /> Enviar Mensagem
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

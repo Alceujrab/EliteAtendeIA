@@ -53,7 +53,7 @@ export default function CRMIndex() {
                             Criar Funil
                         </button>
                     </div>
-                    <div className="flex-1 overflow-hidden">
+                    <div className="flex-1 overflow-auto">
                         <KanbanBoard initialStages={funnelData?.stages || []} />
                     </div>
                 </div>
