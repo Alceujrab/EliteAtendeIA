@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { MoreHorizontal, Plus, Car, Tag } from 'lucide-react';
+import { router } from '@inertiajs/react';
 
 interface Deal {
     id: string;
@@ -11,46 +12,34 @@ interface Deal {
 }
 
 interface ColumnData {
-    id: string;
+    id: string; // Database stage ID as string
     title: string;
     deals: Deal[];
 }
 
-const initialData: ColumnData[] = [
-    {
-        id: 'col-1',
-        title: 'Lead Novo',
-        deals: [
-            { id: 'deal-1', title: 'Corolla 2022', vehicle: 'Toyota Corolla XEI', value: 135000, contact: 'João Silva' },
-            { id: 'deal-2', title: 'Renegade Longitude', vehicle: 'Jeep Renegade', value: 98000, contact: 'Maria Souza' }
-        ]
-    },
-    {
-        id: 'col-2',
-        title: 'Qualificação',
-        deals: [
-            { id: 'deal-3', title: 'T-Cross Highline', vehicle: 'VW T-Cross', value: 125000, contact: 'Carlos Moura' }
-        ]
-    },
-    {
-        id: 'col-3',
-        title: 'Aguardando Financiamento',
-        deals: [
-            { id: 'deal-4', title: 'Honda Civic Touring', vehicle: 'Honda Civic', value: 145000, contact: 'Ana Paula' }
-        ]
-    },
-    {
-        id: 'col-4',
-        title: 'Fechado Ganho',
-        deals: []
-    }
-];
+export default function KanbanBoard({ initialStages }: { initialStages: any[] }) {
+    const [columns, setColumns] = useState<ColumnData[]>([]);
 
-export default function KanbanBoard() {
-    const [columns, setColumns] = useState<ColumnData[]>(initialData);
+    useEffect(() => {
+        // Transform backend data into the format needed by the kanban board
+        if (initialStages && initialStages.length > 0) {
+            const formattedColumns = initialStages.map((stage: any) => ({
+                id: stage.id.toString(),
+                title: stage.name,
+                deals: (stage.deals || []).map((deal: any) => ({
+                    id: deal.id.toString(),
+                    title: deal.title,
+                    vehicle: deal.vehicle_model || 'Veículo não informado',
+                    value: deal.value || 0,
+                    contact: deal.contact?.name || 'Sem Contato'
+                }))
+            }));
+            setColumns(formattedColumns);
+        }
+    }, [initialStages]);
 
     const onDragEnd = (result: DropResult) => {
-        const { source, destination } = result;
+        const { source, destination, draggableId } = result;
         if (!destination) return;
         if (source.droppableId === destination.droppableId && source.index === destination.index) return;
 
@@ -65,6 +54,7 @@ export default function KanbanBoard() {
 
         const [movedDeal] = sourceDeals.splice(source.index, 1);
 
+        // Optimistic UI update
         if (source.droppableId === destination.droppableId) {
             sourceDeals.splice(destination.index, 0, movedDeal);
             const newColumns = [...columns];
@@ -76,12 +66,29 @@ export default function KanbanBoard() {
             newColumns[sourceColIndex] = { ...sourceCol, deals: sourceDeals };
             newColumns[destColIndex] = { ...destCol, deals: destDeals };
             setColumns(newColumns);
+            
+            // Re-order in DB if moving between columns
+            router.post(`/api/crm/deals/${draggableId}/move`, {
+                crm_stage_id: destination.droppableId
+            }, {
+                preserveScroll: true,
+                preserveState: true,
+                onError: () => {
+                    // Revert on error
+                    setColumns(columns);
+                    alert("Erro ao mover negociação. Tentando novamente.");
+                }
+            });
         }
     };
 
     const formatCurrency = (value: number) => {
         return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
     };
+
+    if (columns.length === 0) {
+        return <div className="p-8 text-center text-gray-500">Nenhum estágio configurado neste funil.</div>;
+    }
 
     return (
         <div className="flex h-full w-full gap-4 overflow-x-auto p-2 pb-6">

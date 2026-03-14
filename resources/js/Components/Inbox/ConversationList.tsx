@@ -1,23 +1,19 @@
 import { useState } from 'react';
 import { Search, Filter, MoreHorizontal, MessageSquarePlus } from 'lucide-react';
 
-interface Conversation {
-    id: string;
-    name: string;
-    lastMessage: string;
-    time: string;
-    unread: boolean;
-    channel: 'whatsapp' | 'instagram' | 'email';
+interface ConversationListProps {
+    conversations: any[];
+    activeId: string | null;
+    onSelect: (id: string) => void;
 }
 
-const DUMMY_CONVERSATIONS: Conversation[] = [
-    { id: '1', name: 'João Silva', lastMessage: 'Tenho interesse no Corolla 2022', time: '5m', unread: true, channel: 'whatsapp' },
-    { id: '2', name: 'Maria Souza', lastMessage: 'Qual o valor da entrada?', time: '12m', unread: false, channel: 'instagram' },
-    { id: '3', name: 'Pedro Alvares', lastMessage: 'Podemos agendar um test drive amanhã?', time: '1h', unread: true, channel: 'whatsapp' },
-];
-
-export default function ConversationList() {
+export default function ConversationList({ conversations, activeId, onSelect }: ConversationListProps) {
     const [searchQuery, setSearchQuery] = useState('');
+
+    const filteredConversations = conversations.filter((conv) => 
+        conv.contact?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        conv.channel.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
     return (
         <div className="flex h-full w-80 flex-col border-r border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900 shrink-0">
@@ -51,35 +47,55 @@ export default function ConversationList() {
 
             {/* Lista Rolável */}
             <div className="flex-1 overflow-y-auto">
-                {DUMMY_CONVERSATIONS.map((conv) => (
-                    <div 
-                        key={conv.id} 
-                        className="group relative cursor-pointer border-b border-gray-100 p-4 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800/50 transition-colors"
-                    >
-                        <div className="flex justify-between items-start mb-1">
-                            <div className="flex items-center gap-2">
-                                <div className="h-10 w-10 shrink-0 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold dark:bg-indigo-900/50 dark:text-indigo-400">
-                                    {conv.name.substring(0,2).toUpperCase()}
+                {filteredConversations.map((conv) => {
+                    const isActive = conv.id.toString() === activeId;
+                    const contactName = conv.contact?.name || 'Desconhecido';
+                    
+                    return (
+                        <div 
+                            key={conv.id} 
+                            onClick={() => onSelect(conv.id.toString())}
+                            className={`group relative cursor-pointer border-b border-gray-100 p-4 transition-colors dark:border-gray-800 ${
+                                isActive 
+                                    ? 'bg-indigo-50 dark:bg-indigo-900/20' 
+                                    : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'
+                            }`}
+                        >
+                            {isActive && (
+                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-600 dark:bg-indigo-500"></div>
+                            )}
+                            <div className="flex justify-between items-start mb-1">
+                                <div className="flex items-center gap-2">
+                                    <div className="h-10 w-10 shrink-0 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold dark:bg-indigo-900/50 dark:text-indigo-400">
+                                        {contactName.substring(0,2).toUpperCase()}
+                                    </div>
+                                    <div>
+                                        <h3 className={`text-sm font-semibold truncate w-36 ${isActive ? 'text-indigo-900 dark:text-indigo-100' : 'text-gray-900 dark:text-gray-100'}`}>
+                                            {contactName}
+                                        </h3>
+                                        <div className="text-xs text-gray-400 capitalize">{conv.channel}</div>
+                                    </div>
                                 </div>
-                                <div>
-                                    <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate w-36">
-                                        {conv.name}
-                                    </h3>
-                                    <div className="text-xs text-gray-400 capitalize">{conv.channel}</div>
+                                <div className="flex flex-col items-end gap-1">
+                                    <span className="text-xs text-gray-500">
+                                        {new Date(conv.last_message_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                    </span>
+                                    {conv.status === 'unread' && (
+                                        <span className="h-2 w-2 rounded-full bg-indigo-600"></span>
+                                    )}
                                 </div>
                             </div>
-                            <div className="flex flex-col items-end gap-1">
-                                <span className="text-xs text-gray-500">{conv.time}</span>
-                                {conv.unread && (
-                                    <span className="h-2 w-2 rounded-full bg-indigo-600"></span>
-                                )}
-                            </div>
+                            <p className={`text-sm mt-1 truncate ${conv.status === 'unread' ? 'font-medium text-gray-900 dark:text-gray-100' : 'text-gray-500'}`}>
+                                {conv.status === 'open' ? 'Conversa em andamento...' : 'Aguardando atendimento...'}
+                            </p>
                         </div>
-                        <p className={`text-sm mt-1 truncate ${conv.unread ? 'font-medium text-gray-900 dark:text-gray-100' : 'text-gray-500'}`}>
-                            {conv.lastMessage}
-                        </p>
+                    );
+                })}
+                {filteredConversations.length === 0 && (
+                    <div className="p-4 text-center text-sm text-gray-500">
+                        Nenhuma conversa encontrada.
                     </div>
-                ))}
+                )}
             </div>
         </div>
     );

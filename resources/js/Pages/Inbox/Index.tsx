@@ -1,13 +1,28 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import KinboxLayout from '@/Layouts/KinboxLayout';
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import ConversationList from '@/Components/Inbox/ConversationList';
 import ChatArea from '@/Components/Inbox/ChatArea';
 import ContactPanel from '@/Components/Inbox/ContactPanel';
 import { Inbox, User, Clock, Archive, Plus } from 'lucide-react';
 
 export default function InboxIndex() {
+    const { conversations } = usePage<any>().props;
     const [isPanelOpen, setIsPanelOpen] = useState(true);
+    const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+
+    const conversationList = conversations?.data || [];
+    
+    // Auto-select first conversation if none selected
+    useEffect(() => {
+        if (!activeConversationId && conversationList.length > 0) {
+            setActiveConversationId(conversationList[0].id.toString());
+        }
+    }, [conversationList, activeConversationId]);
+
+    const activeConversation = conversationList.find(
+        (c: any) => c.id.toString() === activeConversationId
+    ) || conversationList[0];
 
     return (
         <KinboxLayout 
@@ -27,7 +42,7 @@ export default function InboxIndex() {
                                     <div className="flex items-center gap-2">
                                         <Inbox className="h-4 w-4" /> Entrada
                                     </div>
-                                    <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs dark:bg-indigo-900/50">4</span>
+                                    <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs dark:bg-indigo-900/50">{conversationList.length}</span>
                                 </button>
                             </li>
                             <li>
@@ -35,7 +50,7 @@ export default function InboxIndex() {
                                     <div className="flex items-center gap-2">
                                         <User className="h-4 w-4" /> Meus
                                     </div>
-                                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs dark:bg-gray-800">12</span>
+                                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs dark:bg-gray-800">0</span>
                                 </button>
                             </li>
                             <li>
@@ -60,9 +75,28 @@ export default function InboxIndex() {
             <Head title="Caixa de Entrada - Omnichannel" />
             
             <div className="flex h-full w-full overflow-hidden">
-                <ConversationList />
-                <ChatArea onTogglePanel={() => setIsPanelOpen(!isPanelOpen)} />
-                <ContactPanel isOpen={isPanelOpen} />
+                <ConversationList 
+                    conversations={conversationList}
+                    activeId={activeConversationId}
+                    onSelect={(id) => setActiveConversationId(id)}
+                />
+                
+                {activeConversation ? (
+                    <>
+                        <ChatArea 
+                            conversation={activeConversation}
+                            onTogglePanel={() => setIsPanelOpen(!isPanelOpen)} 
+                        />
+                        <ContactPanel 
+                            isOpen={isPanelOpen} 
+                            contact={activeConversation.contact}
+                        />
+                    </>
+                ) : (
+                    <div className="flex-1 flex items-center justify-center bg-gray-50 dark:bg-gray-900 text-gray-500">
+                        Selecione uma conversa para iniciar o atendimento.
+                    </div>
+                )}
             </div>
         </KinboxLayout>
     );

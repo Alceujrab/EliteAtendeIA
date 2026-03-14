@@ -1,5 +1,5 @@
 import KinboxLayout from '@/Layouts/KinboxLayout';
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import KanbanBoard from '@/Components/CRM/KanbanBoard';
 import ContactsTable from '@/Components/CRM/ContactsTable';
 import Campaigns from '@/Components/CRM/Campaigns';
@@ -7,6 +7,7 @@ import { Plus } from 'lucide-react';
 import { useState } from 'react';
 
 export default function CRMIndex() {
+    const { funnelData } = usePage<any>().props;
     const [view, setView] = useState<'kanban' | 'contacts' | 'tasks' | 'campaigns'>('kanban');
 
     return (
@@ -44,14 +45,16 @@ export default function CRMIndex() {
             {view === 'kanban' && (
                 <div className="flex h-full flex-col w-full bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-800">
                     <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shrink-0">
-                        <h1 className="text-xl font-bold text-gray-900 dark:text-white">Pipeline: Vendas de Veículos</h1>
+                        <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+                            {funnelData ? funnelData.name : 'Pipeline: Vendas de Veículos'}
+                        </h1>
                         <button className="flex items-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 transition-colors">
                             <Plus className="h-4 w-4" />
                             Criar Funil
                         </button>
                     </div>
                     <div className="flex-1 overflow-hidden">
-                        <KanbanBoard />
+                        <KanbanBoard initialStages={funnelData?.stages || []} />
                     </div>
                 </div>
             )}
