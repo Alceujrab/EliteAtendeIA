@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use App\Models\Conversation;
 use App\Models\ConversationMessage;
@@ -14,7 +15,17 @@ class InboxController extends Controller
 {
     public function index()
     {
-        $conversations = Conversation::with(['contact', 'assignee'])
+        $query = Conversation::with(['contact', 'assignee']);
+
+        if (!$this->isAdmin()) {
+            $userId = (int) Auth::id();
+            $query->where(function ($inner) use ($userId) {
+                $inner->where('assigned_to', $userId)
+                    ->orWhereNull('assigned_to');
+            });
+        }
+
+        $conversations = $query
             ->orderByDesc('last_message_at')
             ->paginate(30);
 
@@ -31,6 +42,8 @@ class InboxController extends Controller
      */
     public function show(Conversation $conversation)
     {
+        abort_unless($this->canAccessConversation($conversation), 403);
+
         $conversation->load(['contact', 'assignee', 'messages.user']);
 
         return response()->json([
@@ -44,6 +57,8 @@ class InboxController extends Controller
      */
     public function sendMessage(Request $request, Conversation $conversation)
     {
+        abort_unless($this->canAccessConversation($conversation), 403);
+
         $request->validate([
             'body' => 'required_without:media_url|string|max:5000',
             'type' => 'in:text,audio,image,video,document,note',
@@ -53,7 +68,7 @@ class InboxController extends Controller
 
         $message = ConversationMessage::create([
             'conversation_id' => $conversation->id,
-            'user_id' => auth()->id(),
+            'user_id' => Auth::id(),
             'type' => $request->input('type', 'text'),
             'body' => $request->input('body', ''),
             'media_url' => $request->input('media_url'),
@@ -81,6 +96,8 @@ class InboxController extends Controller
      */
     public function resolve(Conversation $conversation)
     {
+        abort_unless($this->canAccessConversation($conversation), 403);
+
         $conversation->update(['status' => 'resolved']);
 
         return back()->with('success', 'Conversa resolvida.');
@@ -91,6 +108,8 @@ class InboxController extends Controller
      */
     public function reopen(Conversation $conversation)
     {
+        abort_unless($this->canAccessConversation($conversation), 403);
+
         $conversation->update(['status' => 'open']);
 
         return back()->with('success', 'Conversa reaberta.');
@@ -101,6 +120,8 @@ class InboxController extends Controller
      */
     public function assign(Request $request, Conversation $conversation)
     {
+        abort_unless($this->isAdmin() || (int) $conversation->assigned_to === (int) Auth::id(), 403);
+
         $request->validate([
             'assigned_to' => 'required|exists:users,id',
         ]);
@@ -117,7 +138,7 @@ class InboxController extends Controller
     {
         $request->validate([
             'contact_id' => 'nullable|exists:contacts,id',
-            'phone' => 'nullable|string',
+            'phone' => 'required_without:contact_id|string',
             'name' => 'nullable|string',
             'channel' => 'in:whatsapp,instagram,facebook,webchat',
         ]);
@@ -132,11 +153,18 @@ class InboxController extends Controller
             $contactId = $contact->id;
         }
 
+        if (!$contactId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Contato nao identificado para criar conversa.',
+            ], 422);
+        }
+
         $conversation = Conversation::create([
-            'contact_id' => $contactId ?? 0,
+            'contact_id' => $contactId,
             'channel' => $request->input('channel', 'whatsapp'),
             'status' => 'open',
-            'assigned_to' => auth()->id(),
+            'assigned_to' => Auth::id(),
             'last_message_at' => now(),
         ]);
 
@@ -164,5 +192,20 @@ class InboxController extends Controller
             'type' => $request->file('file')->getMimeType(),
             'name' => $request->file('file')->getClientOriginalName(),
         ]);
+    }
+
+    private function isAdmin(): bool
+    {
+        return (string) (Auth::user()->role ?? 'agent') === 'admin';
+    }
+
+    private function canAccessConversation(Conversation $conversation): bool
+    {
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        $userId = (int) Auth::id();
+        return $conversation->assigned_to === null || (int) $conversation->assigned_to === $userId;
     }
 }
